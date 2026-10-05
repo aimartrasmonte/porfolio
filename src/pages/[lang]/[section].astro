@@ -1,0 +1,725 @@
+---
+// Pàgina "Sobre mi": /ca/sobre-mi/, /es/sobre-mi/, /en/about/
+// El contingut surt de src/content/about/<lang>.md
+import { Picture } from 'astro:assets';
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContactForm from '../../components/ContactForm.astro';
+import CvButtons from '../../components/CvButtons.astro';
+import Icon from '../../components/Icon.astro';
+import OpenTo from '../../components/OpenTo.astro';
+import { PROFILE } from '../../config';
+import { LANGS, type Lang } from '../../i18n/ui';
+import { SEGMENTS, useTranslations } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang, section: SEGMENTS.about[lang] } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const entry = (await getEntry('about', lang)) ?? (await getEntry('about', 'ca'));
+if (!entry) throw new Error('Falta src/content/about/ca.md');
+const { Content } = await render(entry);
+const about = entry.data;
+
+// Índex de seccions (els id són fixos en tots els idiomes; el menú enllaça a #contacte)
+const sections = [
+  about.experience.length > 0 && { id: 'experiencia', label: t('about.experience') },
+  about.education.length > 0 && { id: 'formacio', label: t('about.education') },
+  { id: 'competencies', label: t('about.skills') },
+  about.other.length > 0 && { id: 'altres', label: t('about.other') },
+  { id: 'contacte', label: t('contact.title') },
+].filter((s): s is { id: string; label: string } => !!s);
+
+// Elements desplegables: la primera entrada (la més recent) apareix oberta.
+// Els <details> amb el mateix `name` formen un acordió: obrir-ne un tanca els altres.
+const timelines = [
+  {
+    id: 'experiencia',
+    title: t('about.experience'),
+    items: about.experience.map((e) => ({
+      dates: e.dates,
+      title: e.role,
+      org: e.org,
+      summary: e.summary,
+      bullets: e.bullets,
+    })),
+  },
+  {
+    id: 'formacio',
+    title: t('about.education'),
+    items: about.education.map((e) => ({
+      dates: e.years,
+      title: e.title,
+      org: e.place,
+      summary: undefined,
+      bullets: e.bullets,
+    })),
+  },
+].filter((tl) => tl.items.length > 0);
+---
+
+<BaseLayout lang={lang} route={{ name: 'about' }} title={about.title} description={about.intro} image={about.photo}>
+  <div class="container layout">
+    <div class="main">
+      <section class="intro">
+        <p class="label">{t('meta.role')}</p>
+        <h1>{about.title}</h1>
+        <p class="lead">{about.intro}</p>
+        <div class="prose">
+          <Content />
+        </div>
+        <div class="open-to">
+          <OpenTo label={t('about.openTo')} roles={about.openTo} />
+        </div>
+        <div class="cv">
+          <CvButtons lang={lang} showTitle />
+        </div>
+      </section>
+
+      <!-- Dreceres (pantalles estretes; a les amples hi ha l'índex lateral) -->
+      <nav class="shortcuts" aria-label={t('about.index')}>
+        <ul>
+          {
+            sections.map((s) => (
+              <li>
+                <a href={`#${s.id}`}>{s.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      {
+        timelines.map((tl) => (
+          <section id={tl.id} class="block" aria-labelledby={`${tl.id}-title`}>
+            <h2 id={`${tl.id}-title`} class="section-title">
+              {tl.title}
+            </h2>
+            <div class="timeline">
+              {tl.items.map((item, i) => (
+                <details class="entry" name={tl.id} open={i === 0}>
+                  <summary>
+                    <span class="mono dates">{item.dates}</span>
+                    <span class="head">
+                      <span class="item-title">{item.title}</span>
+                      <span class="org">{item.org}</span>
+                    </span>
+                    <Icon name="chevron-down" size={20} class="chev" />
+                  </summary>
+                  <div class="entry-body">
+                    {item.summary && <p class="summary">{item.summary}</p>}
+                    {item.bullets.length > 0 && (
+                      <ul class="bullets">
+                        {item.bullets.map((b) => (
+                          <li>{b}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+
+      <section id="competencies" class="block" aria-labelledby="skills-title">
+        <h2 id="skills-title" class="section-title">{t('about.skills')}</h2>
+        <div class="cards">
+          {
+            about.skills.map((g) => (
+              <div class="card">
+                <h3 class="label">{g.group}</h3>
+                <ul class="chips">
+                  {g.items.map((s) => (
+                    <li>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+          {
+            about.languages.length > 0 && (
+              <div class="card">
+                <h3 class="label">{t('about.languages')}</h3>
+                <dl class="langs">
+                  {about.languages.map((l) => (
+                    <div>
+                      <dt>{l.name}</dt>
+                      <dd class="mono">{l.level}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )
+          }
+        </div>
+      </section>
+
+      {
+        about.other.length > 0 && (
+          <section id="altres" class="block" aria-labelledby="other-title">
+            <h2 id="other-title" class="section-title">
+              {t('about.other')}
+            </h2>
+            <ul class="other">
+              {about.other.map((o) => (
+                <li>
+                  <p class="item-title">{o.title}</p>
+                  {o.dates && <p class="mono dates">{o.dates}</p>}
+                  {o.detail && <p class="summary">{o.detail}</p>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <section id="contacte" class="block contact" aria-labelledby="contact-title">
+        <h2 id="contact-title" class="section-title">{t('contact.title')}</h2>
+        <div class="contact-grid">
+          <div>
+            <p class="contact-lead">{t('contact.lead')}</p>
+            <p class="label direct">{t('contact.direct')}</p>
+            <ul class="links">
+              <li>
+                <a href={`mailto:${PROFILE.email}`}><Icon name="mail" /> {PROFILE.email}</a>
+              </li>
+              {
+                PROFILE.linkedin && (
+                  <li>
+                    <a href={PROFILE.linkedin} target="_blank" rel="noopener">
+                      <Icon name="linkedin" /> LinkedIn
+                    </a>
+                  </li>
+                )
+              }
+              {
+                PROFILE.github && (
+                  <li>
+                    <a href={PROFILE.github} target="_blank" rel="noopener">
+                      <Icon name="github" /> GitHub
+                    </a>
+                  </li>
+                )
+              }
+            </ul>
+          </div>
+          <ContactForm lang={lang} />
+        </div>
+      </section>
+    </div>
+
+    <aside class="side">
+      {
+        about.photo && (
+          <figure class="photo">
+            <Picture
+              src={about.photo}
+              alt={PROFILE.name}
+              formats={['avif', 'webp']}
+              widths={[400, 750]}
+              sizes="(max-width: 960px) 240px, 320px"
+              loading="eager"
+            />
+            <figcaption class="label">{PROFILE.name}</figcaption>
+          </figure>
+        )
+      }
+      <nav class="toc" aria-label={t('about.index')}>
+        <p class="label">{t('about.index')}</p>
+        <ol>
+          {
+            sections.map((s, i) => (
+              <li>
+                <a href={`#${s.id}`} data-toc={s.id}>
+                  <span class="mono">{String(i + 1).padStart(2, '0')}</span>
+                  {s.label}
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+    </aside>
+  </div>
+</BaseLayout>
+
+<script>
+  // Índex: marca la secció visible en fer scroll
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc a[data-toc]');
+  const targets = [...links]
+    .map((a) => document.getElementById(a.dataset.toc!))
+    .filter((el): el is HTMLElement => !!el);
+
+  const setActive = () => {
+    const line = window.innerHeight * 0.3;
+    let current = targets[0]?.id;
+    for (const el of targets) {
+      if (el.getBoundingClientRect().top <= line) current = el.id;
+    }
+    // Al final de la pàgina, l'última secció
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+      current = targets[targets.length - 1]?.id;
+    }
+    links.forEach((a) => {
+      if (a.dataset.toc === current) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    });
+  };
+
+  let ticking = false;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setActive();
+        ticking = false;
+      });
+    },
+    { passive: true },
+  );
+  setActive();
+
+  // ─── Acordió animat (experiència i formació) ───
+  // Sense JS, l'atribut `name` ja fa l'acordió (sense animació). Amb JS el traiem
+  // per poder animar alhora l'element que s'obre i el que es tanca.
+  const DURATION = 380;
+  const EASING = 'cubic-bezier(0.25, 0.8, 0.25, 1)';
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const entries = [...document.querySelectorAll<HTMLDetailsElement>('details.entry')];
+  const running = new WeakMap<HTMLElement, Animation>();
+
+  entries.forEach((d) => {
+    d.dataset.group = d.getAttribute('name') ?? '';
+    d.removeAttribute('name');
+  });
+
+  const animateBody = (d: HTMLDetailsElement, opening: boolean) => {
+    const body = d.querySelector<HTMLElement>('.entry-body');
+    if (!body || reduceMotion) {
+      d.open = opening;
+      return;
+    }
+    // Si ja s'estava animant, parteix de l'alçada actual
+    const from = d.open ? body.getBoundingClientRect().height : 0;
+    running.get(body)?.cancel();
+    d.open = true;
+    d.classList.toggle('is-closing', !opening);
+    const to = opening ? body.scrollHeight : 0;
+    const pad = getComputedStyle(body).paddingBottom;
+    body.classList.add('is-animating');
+    const anim = body.animate(
+      [
+        { height: `${from}px`, paddingBottom: opening ? '0px' : pad, opacity: opening ? 0 : 1 },
+        { height: `${to}px`, paddingBottom: opening ? pad : '0px', opacity: opening ? 1 : 0 },
+      ],
+      { duration: DURATION, easing: EASING, fill: 'forwards' },
+    );
+    running.set(body, anim);
+    const done = () => {
+      if (running.get(body) !== anim) return; // ja l'ha substituït una altra animació
+      running.delete(body);
+      if (!opening) d.open = false;
+      anim.cancel();
+      body.classList.remove('is-animating');
+      d.classList.remove('is-closing');
+    };
+    anim.onfinish = done;
+    setTimeout(done, DURATION + 50); // per si el navegador no dispara onfinish (pestanya en segon pla)
+  };
+
+  entries.forEach((d) => {
+    d.querySelector('summary')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const opening = !d.open || d.classList.contains('is-closing');
+      animateBody(d, opening);
+      if (!opening) return;
+      entries
+        .filter((o) => o !== d && o.dataset.group === d.dataset.group && o.open && !o.classList.contains('is-closing'))
+        .forEach((o) => animateBody(o, false));
+      // Si en tancar-se el de dalt el títol puja fora de la pantalla, el tornem a mostrar
+      setTimeout(() => {
+        const top = d.getBoundingClientRect().top;
+        const header = document.querySelector('.site-header')?.getBoundingClientRect().height ?? 0;
+        if (top < header) window.scrollBy({ top: top - header - 16, behavior: reduceMotion ? 'auto' : 'smooth' });
+      }, reduceMotion ? 0 : DURATION + 20);
+    });
+  });
+</script>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    padding-top: clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  /* ─── Columna lateral: foto + índex fix ─── */
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+  .photo {
+    margin: 0;
+  }
+  .photo :global(img) {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  .photo figcaption {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 3px solid var(--orange);
+  }
+  .toc {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+  }
+  .toc .label {
+    margin-bottom: 0.75rem;
+  }
+  .toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-left: 1px solid var(--line);
+  }
+  .toc a {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: -1px;
+    padding: 0.45rem 0 0.45rem 1rem;
+    border-left: 3px solid transparent;
+    color: var(--ink-3);
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
+  }
+  .toc a .mono {
+    color: var(--ink-3);
+  }
+  .toc a:hover {
+    color: var(--ink);
+  }
+  .toc a[aria-current] {
+    border-left-color: var(--orange);
+    color: var(--blue);
+    font-weight: 600;
+  }
+  .toc a[aria-current] .mono {
+    color: var(--orange);
+  }
+
+  /* ─── Dreceres (només pantalles estretes) ─── */
+  .shortcuts {
+    display: none;
+  }
+
+  /* ─── Presentació ─── */
+  h1 {
+    margin-top: 1rem;
+    font-size: var(--step-4);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+  .lead {
+    max-width: 52ch;
+    margin-top: 1.25rem;
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+  .prose {
+    margin-top: 2rem;
+  }
+  .open-to,
+  .cv {
+    margin-top: 2rem;
+  }
+
+  .block {
+    margin-top: clamp(3.5rem, 8vw, 5.5rem);
+  }
+
+  /* ─── Línia de temps desplegable (experiència i formació) ─── */
+  .timeline {
+    border-top: 1px solid var(--line-soft);
+  }
+  .entry {
+    border-bottom: 1px solid var(--line-soft);
+  }
+  summary {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr) auto;
+    gap: 1.5rem;
+    align-items: start;
+    padding: 1.2rem 0.5rem 1.2rem 0;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:hover .item-title {
+    color: var(--blue);
+  }
+  summary :global(.chev) {
+    margin-top: 0.15rem;
+    color: var(--ink-3);
+    transition:
+      transform 0.25s ease,
+      color 0.15s;
+  }
+  summary:hover :global(.chev) {
+    color: var(--orange);
+  }
+  .entry[open]:not(.is-closing) summary :global(.chev) {
+    transform: rotate(180deg);
+    color: var(--orange);
+  }
+  .head {
+    display: grid;
+    gap: 0.15rem;
+  }
+  .dates {
+    color: var(--ink-3);
+    padding-top: 0.2rem;
+  }
+  .item-title {
+    font-size: var(--step-1);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    transition: color 0.15s;
+  }
+  .org {
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .entry-body {
+    padding: 0 2.5rem 1.4rem calc(11rem + 1.5rem);
+  }
+  /* L'animació d'obrir/tancar la fa el script (vegeu més amunt) */
+  .entry-body.is-animating {
+    overflow: hidden;
+  }
+  .summary {
+    color: var(--ink-2);
+    max-width: 75ch;
+  }
+  .bullets {
+    margin: 0.6rem 0 0;
+    padding-left: 1.1em;
+    color: var(--ink-2);
+    max-width: 75ch;
+  }
+  .bullets li + li {
+    margin-top: 0.35rem;
+  }
+  .bullets li::marker {
+    color: var(--orange);
+  }
+
+  /* ─── Competències ─── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    gap: 1rem;
+  }
+  .card {
+    padding: 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .card h3 {
+    margin-bottom: 1rem;
+    font-weight: 400;
+    color: var(--blue);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .chips li {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+  }
+  .langs {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  .langs div {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--line);
+  }
+  .langs dd {
+    margin: 0;
+    color: var(--ink-3);
+  }
+
+  /* ─── Altres ─── */
+  .other {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .other li {
+    padding: 1rem 1.1rem;
+    border-left: 3px solid var(--orange);
+    background: var(--paper-2);
+  }
+  .other .item-title {
+    font-size: 1rem;
+  }
+  .other .dates {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+  }
+  .other .summary {
+    margin-top: 0.35rem;
+    font-size: 0.92rem;
+  }
+
+  /* ─── Contacte ─── */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+  }
+  .contact-lead {
+    color: var(--ink-2);
+  }
+  .direct {
+    margin-top: 1.75rem;
+  }
+  .links {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--ink);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .links a:hover {
+    color: var(--blue);
+  }
+
+  /* ─── Pantalles mitjanes: contacte en una columna ─── */
+  @media (max-width: 1180px) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ─── Pantalles estretes: sense índex lateral, amb dreceres ─── */
+  @media (max-width: 960px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .side {
+      order: -1;
+    }
+    .photo {
+      max-width: 240px;
+    }
+    .toc {
+      display: none;
+    }
+    .block {
+      scroll-margin-top: calc(var(--header-h) + 4rem); /* espai per a la barra de dreceres */
+    }
+    .shortcuts {
+      display: block;
+      margin-top: 2.5rem;
+      position: sticky;
+      top: var(--header-h);
+      z-index: 10;
+      margin-inline: calc(var(--gutter) * -1);
+      padding: 0.6rem var(--gutter);
+      background: color-mix(in srgb, var(--paper) 92%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-block: 1px solid var(--line-soft);
+    }
+    .shortcuts ul {
+      display: flex;
+      gap: 0.4rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .shortcuts a {
+      display: block;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      text-decoration: none;
+      color: var(--ink-2);
+    }
+    .shortcuts a:hover {
+      border-color: var(--orange);
+      color: var(--ink);
+    }
+  }
+
+  @media (max-width: 640px) {
+    summary {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.3rem 1rem;
+    }
+    .dates {
+      grid-column: 1;
+      grid-row: 1;
+      padding-top: 0;
+    }
+    .head {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    summary :global(.chev) {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: center;
+    }
+    .entry-body {
+      padding: 0 0 1.25rem;
+    }
+  }
+</style>

@@ -1,0 +1,64 @@
+---
+// Tres botons per descarregar el CV en català, castellà i anglès,
+// sempre visibles sigui quin sigui l'idioma de la web.
+import Flag from './Flag.astro';
+import Icon from './Icon.astro';
+import { CV_FILES } from '../config';
+import { LANG_NAMES, type Lang } from '../i18n/ui';
+import { useTranslations, withBase } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  showTitle?: boolean;
+  variant?: 'default' | 'compact';
+}
+const { lang, showTitle = false, variant = 'default' } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class:list={['cv-buttons', variant]}>
+  {showTitle && <p class="label">{t('cv.title')}</p>}
+  <ul>
+    {
+      CV_FILES.map((cv) => (
+        <li>
+          <a
+            class="btn btn--ghost"
+            href={withBase(cv.file)}
+            download
+            hreflang={cv.lang}
+            title={`${t('cv.in')} ${LANG_NAMES[cv.lang as Lang]} (PDF)`}
+          >
+            <Icon name="download" />
+            <span>CV</span>
+            <Flag lang={cv.lang} />
+            <span class="meta">{cv.label}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .cv-buttons .label {
+    margin-bottom: 0.6rem;
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .compact .btn {
+    padding: 0.5em 0.8em;
+  }
+  /* En passar el cursor s'omplen de taronja, com el botó CV de la capçalera */
+  .btn:hover {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: var(--orange-ink);
+  }
+</style>

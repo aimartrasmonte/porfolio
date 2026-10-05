@@ -1,0 +1,88 @@
+---
+// Visor 3D interactiu (<model-viewer> de Google). La llibreria (~1 MB amb three.js)
+// només es descarrega quan el visor entra a la pantalla.
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
+import Icon from './Icon.astro';
+import type { Lang } from '../i18n/ui';
+import { useTranslations, withBase } from '../i18n/utils';
+
+interface Props {
+  src: string; // camí dins de /public
+  alt: string;
+  poster?: ImageMetadata;
+  lang: Lang;
+}
+const { src, alt, poster, lang } = Astro.props;
+const t = useTranslations(lang);
+const posterUrl = poster ? (await getImage({ src: poster, width: 1200, format: 'webp' })).src : undefined;
+---
+
+<div class="viewer blueprint-grid" data-model-viewer>
+  <model-viewer
+    src={withBase(src)}
+    alt={alt}
+    poster={posterUrl}
+    camera-controls
+    auto-rotate
+    auto-rotate-delay="1500"
+    rotation-per-second="18deg"
+    interaction-prompt="none"
+    shadow-intensity="0.8"
+    exposure="1.05"
+    environment-image="neutral"
+    loading="lazy"
+    reveal="auto"
+    touch-action="pan-y"
+  >
+  </model-viewer>
+  <p class="hint label"><Icon name="cube" /> {t('project.modelHint')}</p>
+</div>
+
+<script>
+  // Carrega el component només quan el visor és a prop de la pantalla
+  const viewers = document.querySelectorAll('[data-model-viewer]');
+  if (viewers.length) {
+    const load = () => import('@google/model-viewer');
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            io.disconnect();
+            load();
+          }
+        },
+        { rootMargin: '300px' },
+      );
+      viewers.forEach((v) => io.observe(v));
+    } else {
+      load();
+    }
+  }
+</script>
+
+<style>
+  .viewer {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background-color: var(--surface);
+    overflow: hidden;
+  }
+  model-viewer {
+    display: block;
+    width: 100%;
+    height: clamp(320px, 60vh, 620px);
+    --poster-color: transparent;
+    background: transparent;
+  }
+  .hint {
+    position: absolute;
+    left: 1rem;
+    bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    pointer-events: none;
+  }
+</style>

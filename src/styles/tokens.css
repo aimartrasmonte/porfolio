@@ -1,0 +1,64 @@
+/* ─── Tokens de disseny ─────────────────────────────────────────────────────
+   Estil "pla d'enginyeria": paper clar i tinta fosca. Els colors d'accent
+   són els del CV: blau marí (#123778) i taronja (#fb410e).
+
+   El tema es tria amb l'atribut data-theme de <html> ('light' | 'dark'),
+   que fixa el script inline de BaseLayout (preferència desada o del sistema). */
+
+:root {
+  --paper: #f6f5f1;
+  --paper-2: #eeece6;
+  --surface: #ffffff;
+  --ink: #1b1f24;
+  --ink-2: #4a525c;
+  --ink-3: #6b737d;
+  --line: #c9ccd1;
+  --line-soft: #dfe1e4;
+  --blue: #123778;
+  --blue-ink: #ffffff; /* text sobre fons blau */
+  --blue-soft: rgb(18 55 120 / 0.08);
+  --orange: #fb410e;
+  --orange-hover: #ff7547; /* més clar: manté el contrast amb el text fosc */
+  --orange-ink: #1b1f24; /* text sobre fons taronja (contrast AA) */
+  --orange-soft: rgb(251 65 14 / 0.1);
+  --grid: rgb(18 55 120 / 0.07);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.875rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+  --step-1: clamp(1.2rem, 1.12rem + 0.4vw, 1.45rem);
+  --step-2: clamp(1.5rem, 1.32rem + 0.9vw, 2.1rem);
+  --step-3: clamp(1.9rem, 1.5rem + 2vw, 3.2rem);
+  --step-4: clamp(2.3rem, 1.6rem + 3.5vw, 4.6rem);
+
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --max: 1240px;
+  --radius: 4px;
+  --header-h: 64px;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --paper: #0f1318;
+  --paper-2: #151a21;
+  --surface: #1a2029;
+  --ink: #e8eaed;
+  --ink-2: #b4bac2;
+  --ink-3: #8c939c;
+  --line: #343c48;
+  --line-soft: #252c36;
+  --blue: #7fa2ec;
+  --blue-ink: #0f1318;
+  --blue-soft: rgb(127 162 236 / 0.1);
+  --orange: #ff6233;
+  --orange-hover: #ff8a63;
+  --orange-ink: #0f1318;
+  --orange-soft: rgb(255 98 51 / 0.12);
+  --grid: rgb(127 162 236 / 0.06);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  color-scheme: dark;
+}

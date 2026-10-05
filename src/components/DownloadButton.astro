@@ -1,0 +1,23 @@
+---
+// Botó de descàrrega d'un fitxer de /public, amb la mida del fitxer.
+import Icon from './Icon.astro';
+import type { Lang } from '../i18n/ui';
+import { withBase } from '../i18n/utils';
+import { publicFileSize } from '../lib/projects';
+
+interface Props {
+  file: string; // camí dins de /public
+  label: string;
+  lang: Lang;
+  variant?: 'download' | 'ghost';
+}
+const { file, label, lang, variant = 'download' } = Astro.props;
+const size = publicFileSize(file, lang);
+const ext = file.split('.').pop()?.toUpperCase();
+---
+
+<a class:list={['btn', `btn--${variant}`]} href={withBase(file)} download>
+  <Icon name="download" />
+  <span>{label}</span>
+  <span class="meta">{[ext, size].filter(Boolean).join(' · ')}</span>
+</a>

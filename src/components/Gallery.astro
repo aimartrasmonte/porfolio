@@ -1,0 +1,284 @@
+---
+// Galeria d'imatges i vídeos amb lightbox (PhotoSwipe).
+// - variant "grid": tots els elements en columnes (pàgina de projecte)
+// - variant "strip": tira de miniatures; mostra `visible` elements i un "+N"
+//   a l'últim, però el lightbox els inclou tots (home)
+import { getImage, Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import type { Media } from '../lib/projects';
+
+interface Props {
+  lang: Lang;
+  images: Media[];
+  variant?: 'grid' | 'strip';
+  visible?: number;
+}
+const { lang, images, variant = 'grid', visible = 4 } = Astro.props;
+const t = useTranslations(lang);
+
+const items = await Promise.all(
+  images.map(async (item) => {
+    if (item.type === 'video') {
+      const poster = item.poster && (await getImage({ src: item.poster, width: 1600, format: 'webp' })).src;
+      return { ...item, href: item.src, width: 0, height: 0, posterUrl: poster };
+    }
+    const width = Math.min(item.src.width, 2400);
+    const large = await getImage({ src: item.src, width, format: 'webp' });
+    const height = Math.round((item.src.height / item.src.width) * width);
+    return { ...item, href: large.src, width, height, posterUrl: undefined };
+  }),
+);
+const extra = Math.max(items.length - visible, 0);
+const thumbWidths = variant === 'strip' ? [240, 480] : [480, 800, 1200];
+const thumbSizes =
+  variant === 'strip'
+    ? '(max-width: 760px) 25vw, 160px'
+    : '(max-width: 600px) 100vw, (max-width: 1000px) 50vw, 400px';
+---
+
+<div class:list={['gallery', `gallery--${variant}`, 'pswp-gallery']}>
+  {
+    items.map((item, i) => {
+      const hidden = variant === 'strip' && i >= visible;
+      const isLastVisible = variant === 'strip' && extra > 0 && i === visible - 1;
+      const isVideo = item.type === 'video';
+      return (
+        <figure class:list={['item', { hidden }]}>
+          <a
+            href={item.href}
+            data-pswp-width={isVideo ? undefined : item.width}
+            data-pswp-height={isVideo ? undefined : item.height}
+            data-video={isVideo ? item.src : undefined}
+            data-poster={item.posterUrl}
+            data-caption={item.caption ?? ''}
+            aria-label={`${t(isVideo ? 'project.playVideo' : 'project.openImage')}: ${item.alt}`}
+            tabindex={hidden ? -1 : undefined}
+          >
+            {item.type === 'image' && <Image src={item.src} alt={item.alt} widths={thumbWidths} sizes={thumbSizes} loading="lazy" />}
+            {item.type === 'video' &&
+              (item.poster ? (
+                <Image src={item.poster} alt={item.alt} widths={thumbWidths} sizes={thumbSizes} loading="lazy" />
+              ) : (
+                // Sense pòster: el primer fotograma del vídeo fa de miniatura
+                <video src={`${item.src}#t=0.1`} preload="metadata" muted playsinline aria-hidden="true" />
+              ))}
+            {isVideo && !isLastVisible && (
+              <span class="play" aria-hidden="true">
+                <Icon name="play" />
+              </span>
+            )}
+            {isLastVisible && (
+              <span class="more" aria-hidden="true">
+                +{extra}
+              </span>
+            )}
+          </a>
+          {variant === 'grid' && item.caption && (
+            <figcaption>
+              <span class="mono">{String(i + 1).padStart(2, '0')}</span> {item.caption}
+            </figcaption>
+          )}
+        </figure>
+      );
+    })
+  }
+</div>
+
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
+
+  const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+  document.querySelectorAll<HTMLElement>('.pswp-gallery:not([data-pswp-ready])').forEach((gallery) => {
+    gallery.dataset.pswpReady = '';
+    const lightbox = new PhotoSwipeLightbox({
+      gallery,
+      children: 'a',
+      pswpModule: () => import('photoswipe'),
+      bgOpacity: 0.94,
+      showHideAnimationType: 'fade',
+    });
+
+    // Els vídeos es mostren com a diapositiva HTML amb un <video> natiu
+    lightbox.addFilter('itemData', (itemData) => {
+      const el = itemData.element as HTMLElement | undefined;
+      const src = el?.dataset.video;
+      if (!src) return itemData;
+      const poster = el.dataset.poster ? ` poster="${escapeAttr(el.dataset.poster)}"` : '';
+      return {
+        ...itemData,
+        type: 'html',
+        html: `<div class="pswp-video"><video src="${escapeAttr(src)}"${poster} controls playsinline preload="metadata"></video></div>`,
+      };
+    });
+    // Reprodueix el vídeo de la diapositiva activa i atura els altres
+    lightbox.on('contentActivate', ({ content }) => {
+      content.element?.querySelector('video')?.play().catch(() => {});
+    });
+    lightbox.on('contentDeactivate', ({ content }) => {
+      content.element?.querySelector('video')?.pause();
+    });
+    // Sobre el vídeo, arrossegar mou la barra de temps en lloc de canviar de diapositiva
+    lightbox.on('pointerDown', (e) => {
+      if ((e.originalEvent.target as Element | null)?.closest?.('.pswp-video video')) e.preventDefault();
+    });
+
+    // Peu de foto a la part inferior
+    lightbox.on('uiRegister', () => {
+      lightbox.pswp?.ui?.registerElement({
+        name: 'caption',
+        order: 9,
+        isButton: false,
+        appendTo: 'root',
+        onInit: (el, pswp) => {
+          pswp.on('change', () => {
+            const a = pswp.currSlide?.data.element as HTMLElement | undefined;
+            const text = a?.dataset.caption || a?.querySelector('img')?.alt || '';
+            el.textContent = text;
+            el.hidden = !text;
+          });
+        },
+      });
+    });
+    lightbox.init();
+  });
+</script>
+
+<style>
+  .gallery {
+    margin: 0;
+  }
+  figure {
+    margin: 0;
+  }
+  a {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    cursor: zoom-in;
+  }
+  a[data-video] {
+    cursor: pointer;
+  }
+  img,
+  video {
+    display: block;
+    width: 100%;
+    object-fit: cover;
+    transition:
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.2s;
+  }
+  a:hover img,
+  a:hover video {
+    transform: scale(1.04);
+  }
+
+  /* Botó de "play" sobre les miniatures de vídeo */
+  .play {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: var(--orange);
+    color: var(--orange-ink);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.3);
+    transition: scale 0.2s;
+  }
+  .play :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-left: 2px;
+  }
+  a:hover .play {
+    scale: 1.1;
+  }
+  .gallery--strip .play {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  .gallery--strip .play :global(svg) {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  /* Graella (post) */
+  /* Ordre per files; les miniatures es retallen a 4:3 (el lightbox mostra la foto sencera) */
+  .gallery--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 1.25rem 1rem;
+  }
+  .gallery--grid img,
+  .gallery--grid video {
+    aspect-ratio: 4 / 3;
+  }
+  figcaption {
+    padding-top: 0.5rem;
+    font-size: var(--step--1);
+    color: var(--ink-3);
+  }
+  figcaption .mono {
+    color: var(--blue);
+  }
+
+  /* Tira (home) */
+  .gallery--strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  .gallery--strip .hidden {
+    display: none;
+  }
+  .gallery--strip img,
+  .gallery--strip video {
+    aspect-ratio: 1;
+  }
+  .more {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgb(17 20 24 / 0.55);
+    color: #fff;
+    font: 500 1.05rem var(--font-mono);
+  }
+
+  /* Elements creats per PhotoSwipe (fora d'aquest component) */
+  :global(.pswp-video) {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 60px 16px 72px;
+  }
+  :global(.pswp-video video) {
+    max-width: 100%;
+    max-height: calc(100dvh - 132px);
+    background: #000;
+  }
+  :global(.pswp__caption) {
+    position: absolute;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    max-width: min(90vw, 720px);
+    padding: 0.5rem 0.9rem;
+    background: rgb(0 0 0 / 0.6);
+    color: #fff;
+    font: 0.9rem/1.4 var(--font-sans);
+    text-align: center;
+    border-radius: var(--radius);
+  }
+</style>

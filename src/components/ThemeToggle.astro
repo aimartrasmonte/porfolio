@@ -1,0 +1,105 @@
+---
+// Botó dia/nit. La preferència es desa a localStorage ('theme'); si no n'hi ha,
+// se segueix la del sistema. El tema inicial el fixa el script inline de BaseLayout.
+import Icon from './Icon.astro';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const t = useTranslations(Astro.props.lang);
+---
+
+<button
+  class="theme-toggle"
+  type="button"
+  data-theme-toggle
+  data-label-dark={t('theme.toDark')}
+  data-label-light={t('theme.toLight')}
+  aria-label={t('theme.toDark')}
+  title={t('theme.toDark')}
+>
+  <Icon name="moon" size={18} class="i-moon" />
+  <Icon name="sun" size={18} class="i-sun" />
+</button>
+
+<script>
+  const root = document.documentElement;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+  const sync = () => {
+    const dark = root.dataset.theme === 'dark';
+    document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn) => {
+      const label = (dark ? btn.dataset.labelLight : btn.dataset.labelDark) ?? '';
+      btn.setAttribute('aria-label', label);
+      btn.title = label;
+    });
+  };
+
+  const apply = (theme: 'light' | 'dark', save: boolean) => {
+    root.dataset.theme = theme;
+    if (save) {
+      try {
+        localStorage.setItem('theme', theme);
+      } catch {}
+    }
+    sync();
+  };
+
+  document.querySelectorAll('[data-theme-toggle]').forEach((btn) =>
+    btn.addEventListener('click', () => apply(root.dataset.theme === 'dark' ? 'light' : 'dark', true)),
+  );
+
+  // Si l'usuari no ha triat res, segueix els canvis del sistema
+  media.addEventListener('change', (e) => {
+    let saved = null;
+    try {
+      saved = localStorage.getItem('theme');
+    } catch {}
+    if (!saved) apply(e.matches ? 'dark' : 'light', false);
+  });
+
+  sync();
+</script>
+
+<style>
+  .theme-toggle {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
+  }
+  .theme-toggle:hover {
+    color: var(--orange);
+    border-color: var(--ink);
+  }
+  .theme-toggle :global(svg) {
+    grid-area: 1 / 1;
+    transition:
+      transform 0.35s ease,
+      opacity 0.2s;
+  }
+  /* En mode clar es veu la lluna (per passar a fosc); en mode fosc, el sol */
+  .theme-toggle :global(.i-sun) {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+  :global(:root[data-theme='dark']) .theme-toggle :global(.i-moon) {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
+  }
+  :global(:root[data-theme='dark']) .theme-toggle :global(.i-sun) {
+    opacity: 1;
+    transform: none;
+  }
+</style>

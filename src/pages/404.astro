@@ -1,0 +1,46 @@
+---
+// GitHub Pages serveix aquest fitxer (404.html) per a qualsevol URL inexistent.
+// Es mostra en català, amb enllaços a les tres versions.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { LANGS, ui } from '../i18n/ui';
+import { pathFor } from '../i18n/utils';
+---
+
+<BaseLayout lang="ca" route={{ name: 'home' }} title="404">
+  <section class="container nf blueprint-grid">
+    <p class="code mono">404</p>
+    {
+      LANGS.map((l) => (
+        <div class="msg" lang={l}>
+          <h1>{ui[l]['404.title']}</h1>
+          <p>{ui[l]['404.text']}</p>
+          <a class="btn btn--ghost" href={pathFor(l, { name: 'home' })}>
+            {ui[l]['404.home']} →
+          </a>
+        </div>
+      ))
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem;
+    padding-block: clamp(3rem, 10vw, 7rem);
+  }
+  .code {
+    grid-column: 1 / -1;
+    font-size: clamp(4rem, 15vw, 9rem);
+    line-height: 1;
+    color: var(--blue);
+  }
+  h1 {
+    font-size: var(--step-2);
+  }
+  .msg p {
+    margin-block: 0.75rem 1.25rem;
+    color: var(--ink-2);
+  }
+</style>

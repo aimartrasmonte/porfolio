@@ -1,0 +1,79 @@
+---
+// Llista de rols que busques ("Busco feina en …"). Les dades surten de
+// `openTo` a src/content/about/<lang>.md.
+interface Props {
+  label: string;
+  roles: string[];
+}
+const { label, roles } = Astro.props;
+---
+
+{
+  roles.length > 0 && (
+    <div class="open-to">
+      <p class="label">
+        <span class="pulse" aria-hidden="true" />
+        {label}
+      </p>
+      <ul>
+        {roles.map((r) => (
+          <li>{r}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+<style>
+  .open-to {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .label {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--ink-2);
+  }
+  .pulse {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .pulse::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--orange);
+      animation: pulse 2s ease-out infinite;
+    }
+  }
+  @keyframes pulse {
+    to {
+      transform: scale(2.8);
+      opacity: 0;
+    }
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    padding: 0.4rem 0.8rem;
+    border: 1.5px solid var(--blue);
+    border-radius: 999px;
+    color: var(--blue);
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: var(--blue-soft);
+  }
+</style>

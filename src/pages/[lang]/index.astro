@@ -1,0 +1,75 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import CategoryFilter from '../../components/CategoryFilter.astro';
+import ProjectBlock from '../../components/ProjectBlock.astro';
+import { CATEGORY_KEYS, LANGS, type Lang } from '../../i18n/ui';
+import { pathFor, useTranslations } from '../../i18n/utils';
+import { getProjects } from '../../lib/projects';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Lang;
+const t = useTranslations(lang);
+const projects = await getProjects(lang);
+
+// Categories presents, en l'ordre definit a i18n/ui.ts
+const categories = CATEGORY_KEYS.map((key) => ({
+  key,
+  count: projects.filter((p) => p.meta.categories.includes(key)).length,
+})).filter((c) => c.count > 0);
+
+const featured = projects[0];
+const about = (await getEntry('about', lang)) ?? (await getEntry('about', 'ca'));
+---
+
+<BaseLayout lang={lang} route={{ name: 'home' }}>
+  <Hero
+    lang={lang}
+    image={featured && {
+      src: featured.meta.cover,
+      title: featured.text.data.title,
+      href: pathFor(lang, { name: 'project', slug: featured.slug }),
+    }}
+    openTo={about?.data.openTo}
+    avatar={about?.data.avatar ?? about?.data.photo}
+    aboutHref={pathFor(lang, { name: 'about' })}
+  />
+
+  <section id="projectes" class="container projects" aria-labelledby="projects-title">
+    <header class="section-head section-title">
+      <h2 id="projects-title">{t('projects.title')}</h2>
+      <p>{t('projects.lead')}</p>
+    </header>
+
+    <CategoryFilter lang={lang} categories={categories} total={projects.length} />
+
+    <div class="list">
+      {projects.map((project, i) => <ProjectBlock project={project} index={i} total={projects.length} lang={lang} />)}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .projects {
+    padding-top: clamp(3rem, 8vw, 6rem);
+  }
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+  }
+  .section-head h2 {
+    font-size: var(--step-3);
+  }
+  .section-head p {
+    color: var(--ink-3);
+    font-size: var(--step-0);
+    font-weight: 400;
+  }
+</style>

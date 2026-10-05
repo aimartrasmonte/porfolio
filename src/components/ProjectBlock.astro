@@ -1,0 +1,406 @@
+---
+// Bloc de projecte a la home: portada, mini galeria, resum i enllaços.
+import { getImage, Picture } from 'astro:assets';
+import Gallery from './Gallery.astro';
+import Icon from './Icon.astro';
+import type { Lang } from '../i18n/ui';
+import { categoryName, pathFor, useTranslations, withBase } from '../i18n/utils';
+import { projectMedia, type Project } from '../lib/projects';
+
+interface Props {
+  project: Project;
+  index: number;
+  total: number;
+  lang: Lang;
+}
+const { project, index, total, lang } = Astro.props;
+const { meta, text, slug } = project;
+const t = useTranslations(lang);
+const href = pathFor(lang, { name: 'project', slug });
+const num = (n: number) => String(n).padStart(2, '0');
+
+const galleryImages = projectMedia(project, lang);
+
+// Carrusel de la imatge gran: portada + tots els elements de la galeria
+const trackId = `slides-${slug}`;
+const slides = await Promise.all([
+  { type: 'image' as const, src: meta.cover },
+  ...galleryImages.map(async (m) =>
+    m.type === 'image'
+      ? { type: 'image' as const, src: m.src }
+      : {
+          type: 'video' as const,
+          src: m.src,
+          poster: m.poster && (await getImage({ src: m.poster, width: 1400, format: 'webp' })).src,
+        },
+  ),
+]);
+---
+
+<article
+  class:list={['project', 'reveal', { flipped: index % 2 === 1 }]}
+  data-categories={meta.categories.join(' ')}
+  aria-labelledby={`p-${slug}`}
+>
+  <div class="media">
+    <div class="cover" data-carousel>
+      <div class="track" id={trackId}>
+        {
+          slides.map((s, i) => (
+            <a class="slide" href={href} tabindex="-1" aria-hidden="true">
+              {s.type === 'image' && (
+                <Picture
+                  src={s.src}
+                  alt=""
+                  formats={['avif', 'webp']}
+                  widths={[640, 960, 1400]}
+                  sizes="(max-width: 900px) 100vw, 60vw"
+                  loading={index === 0 && i === 0 ? 'eager' : 'lazy'}
+                />
+              )}
+              {s.type === 'video' && (
+                <video
+                  src={s.poster ? s.src : `${s.src}#t=0.1`}
+                  poster={s.poster}
+                  preload={s.poster ? 'none' : 'metadata'}
+                  muted
+                  loop
+                  playsinline
+                />
+              )}
+            </a>
+          ))
+        }
+      </div>
+      <span class="corner tl" aria-hidden="true"></span>
+      <span class="corner br" aria-hidden="true"></span>
+      {
+        slides.length > 1 && (
+          <>
+            <button class="arrow prev" type="button" data-prev aria-controls={trackId} aria-label={t('carousel.prev')}>
+              <Icon name="chevron-left" size={22} />
+            </button>
+            <button class="arrow next" type="button" data-next aria-controls={trackId} aria-label={t('carousel.next')}>
+              <Icon name="chevron-right" size={22} />
+            </button>
+            <span class="count mono" aria-hidden="true">
+              <span data-current>01</span> / {num(slides.length)}
+            </span>
+          </>
+        )
+      }
+    </div>
+    {galleryImages.length > 0 && <Gallery lang={lang} images={galleryImages} variant="strip" />}
+  </div>
+
+  <div class="body">
+    <p class="label head">
+      <span class="num">{num(index + 1)} / {num(total)}</span>
+      <span class="year">{meta.year}</span>
+    </p>
+    <h3 id={`p-${slug}`}>
+      <a href={href}>{text.data.title}</a>
+    </h3>
+    <ul class="tags" aria-label={t('specs.categories')}>
+      {meta.categories.map((c) => <li>{categoryName(c, lang)}</li>)}
+    </ul>
+    <p class="summary">{text.data.summary}</p>
+
+    {
+      meta.software.length > 0 && (
+        <p class="software mono">
+          <span class="label">{t('specs.software')}:</span> {meta.software.join(' · ')}
+        </p>
+      )
+    }
+
+    <div class="actions">
+      <a class="btn btn--primary" href={href}>
+        {t('project.readMore')}
+        <Icon name="arrow-right" />
+      </a>
+      {
+        meta.pdf && (
+          <a class="btn btn--ghost" href={withBase(meta.pdf)} download>
+            <Icon name="file" />
+            {t('project.pdf')}
+          </a>
+        )
+      }
+      {meta.model3d && <span class="badge mono" title={t('project.model')}><Icon name="cube" /> 3D</span>}
+    </div>
+  </div>
+</article>
+
+<script>
+  // Carrusel: fletxes, comptador i reproducció dels vídeos de la diapositiva visible
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  document.querySelectorAll<HTMLElement>('[data-carousel]:not([data-ready])').forEach((root) => {
+    root.dataset.ready = '';
+    const track = root.querySelector<HTMLElement>('.track')!;
+    const slides = [...track.children] as HTMLElement[];
+    const counter = root.querySelector('[data-current]');
+    const n = slides.length;
+    let inView = false;
+
+    const current = () => Math.round(track.scrollLeft / track.clientWidth);
+    const go = (i: number) =>
+      track.scrollTo({ left: ((i + n) % n) * track.clientWidth, behavior: reduceMotion ? 'auto' : 'smooth' });
+
+    const sync = () => {
+      const i = current();
+      if (counter) counter.textContent = pad(i + 1);
+      slides.forEach((s, k) => {
+        const video = s.querySelector('video');
+        if (!video) return;
+        if (k === i && inView) video.play().catch(() => {});
+        else video.pause();
+      });
+    };
+
+    root.querySelector('[data-prev]')?.addEventListener('click', () => go(current() - 1));
+    root.querySelector('[data-next]')?.addEventListener('click', () => go(current() + 1));
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') go(current() - 1);
+      else if (e.key === 'ArrowRight') go(current() + 1);
+    });
+
+    let ticking = false;
+    track.addEventListener(
+      'scroll',
+      () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          sync();
+          ticking = false;
+        });
+      },
+      { passive: true },
+    );
+    new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      sync();
+    }).observe(root);
+  });
+</script>
+
+<style>
+  .project {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: center;
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+    border-top: 1px solid var(--line-soft);
+  }
+  .project.flipped {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  }
+  .project.flipped .media {
+    order: 2;
+  }
+  .project[hidden] {
+    display: none;
+  }
+
+  .media {
+    display: grid;
+    gap: 0.5rem;
+  }
+  /* ─── Carrusel de la imatge gran ─── */
+  .cover {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--paper-2);
+  }
+  .track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+  .slide {
+    flex: 0 0 100%;
+    display: block;
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  .slide :global(img),
+  .slide video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .project:hover .slide :global(img),
+  .project:hover .slide video {
+    transform: scale(1.03);
+  }
+
+  .arrow {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    color: var(--ink);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.18);
+    cursor: pointer;
+    opacity: 0;
+    translate: 0 -50%;
+    transition:
+      opacity 0.2s,
+      translate 0.2s,
+      background-color 0.15s,
+      color 0.15s,
+      border-color 0.15s;
+  }
+  .arrow.prev {
+    left: 0.9rem;
+    translate: -6px -50%;
+  }
+  .arrow.next {
+    right: 0.9rem;
+    translate: 6px -50%;
+  }
+  .cover:hover .arrow,
+  .arrow:focus-visible {
+    opacity: 1;
+    translate: 0 -50%;
+  }
+  .arrow:hover {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: var(--orange-ink);
+  }
+  /* En pantalles tàctils es llisca amb el dit; les fletxes queden visibles però discretes */
+  @media (hover: none) {
+    .arrow {
+      width: 2.25rem;
+      height: 2.25rem;
+      opacity: 0.85;
+      translate: 0 -50%;
+    }
+  }
+  .count {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    background: rgb(17 20 24 / 0.6);
+    color: #fff;
+    font-size: 0.72rem;
+    pointer-events: none;
+  }
+  /* Cantonades tipus marca de tall */
+  .corner {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border: 0 solid #fff;
+    opacity: 0.85;
+    pointer-events: none;
+  }
+  .corner.tl {
+    top: 12px;
+    left: 12px;
+    border-top-width: 1.5px;
+    border-left-width: 1.5px;
+  }
+  .corner.br {
+    right: 12px;
+    bottom: 12px;
+    border-right-width: 1.5px;
+    border-bottom-width: 1.5px;
+  }
+
+  .head {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .num {
+    color: var(--blue);
+  }
+  h3 {
+    font-size: var(--step-3);
+  }
+  h3 a {
+    text-decoration: none;
+  }
+  h3 a:hover {
+    color: var(--blue);
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tags li {
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font: 0.72rem var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-2);
+  }
+  .summary {
+    margin-top: 1.1rem;
+    color: var(--ink-2);
+  }
+  .software {
+    margin-top: 1rem;
+    color: var(--ink-2);
+  }
+  .software .label {
+    font-size: inherit;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.6rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.6rem;
+    color: var(--blue);
+    border: 1px dashed var(--blue);
+    border-radius: var(--radius);
+  }
+
+  @media (max-width: 900px) {
+    .project,
+    .project.flipped {
+      grid-template-columns: 1fr;
+    }
+    .project.flipped .media {
+      order: 0;
+    }
+  }
+</style>

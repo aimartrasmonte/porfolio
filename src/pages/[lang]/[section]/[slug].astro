@@ -1,0 +1,319 @@
+---
+// Pàgina de projecte: /ca/projectes/<slug>/, /es/proyectos/<slug>/, /en/projects/<slug>/
+import { Picture } from 'astro:assets';
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DownloadButton from '../../../components/DownloadButton.astro';
+import Gallery from '../../../components/Gallery.astro';
+import Icon from '../../../components/Icon.astro';
+import ModelViewer from '../../../components/ModelViewer.astro';
+import SpecSheet from '../../../components/SpecSheet.astro';
+import { LANGS, type Lang } from '../../../i18n/ui';
+import { categoryName, pathFor, SEGMENTS, useTranslations } from '../../../i18n/utils';
+import { getProjects, projectMedia } from '../../../lib/projects';
+
+export async function getStaticPaths() {
+  const paths = [];
+  for (const lang of LANGS) {
+    const projects = await getProjects(lang);
+    for (const [i, project] of projects.entries()) {
+      paths.push({
+        params: { lang, section: SEGMENTS.projects[lang], slug: project.slug },
+        props: {
+          project,
+          index: i,
+          total: projects.length,
+          prev: projects[i - 1],
+          next: projects[i + 1],
+        },
+      });
+    }
+  }
+  return paths;
+}
+
+const lang = Astro.params.lang as Lang;
+const { project, index, total, prev, next } = Astro.props;
+const { meta, text, slug } = project;
+const t = useTranslations(lang);
+const { Content } = await render(text);
+const num = (n: number) => String(n).padStart(2, '0');
+
+const galleryImages = projectMedia(project, lang);
+---
+
+<BaseLayout
+  lang={lang}
+  route={{ name: 'project', slug }}
+  title={text.data.title}
+  description={text.data.summary}
+  image={meta.cover}
+  type="article"
+>
+  <article class="post">
+    <header class="container intro">
+      <a class="back label" href={pathFor(lang, { name: 'home', hash: 'projectes' })}>
+        <Icon name="arrow-left" />
+        {t('project.back')}
+      </a>
+      <p class="label meta-line">
+        <span class="num">{num(index + 1)} / {num(total)}</span>
+        <span>{meta.categories.map((c) => categoryName(c, lang)).join(' · ')}</span>
+        {meta.year && <span>{meta.year}</span>}
+      </p>
+      <h1>{text.data.title}</h1>
+      <p class="summary">{text.data.summary}</p>
+    </header>
+
+    <div class="container cover-wrap">
+      <Picture
+        class="cover"
+        src={meta.cover}
+        alt={text.data.title}
+        formats={['avif', 'webp']}
+        widths={[800, 1280, 1920, 2400]}
+        sizes="(max-width: 1240px) 100vw, 1240px"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+
+    <div class="container columns">
+      <div class="prose" lang={project.isFallback ? 'ca' : undefined}>
+        <Content />
+      </div>
+
+      <aside class="side">
+        <SpecSheet project={project} lang={lang}>
+          {
+            meta.pdf && (
+              <div class="side-download">
+                <DownloadButton file={meta.pdf} label={t('project.pdf')} lang={lang} />
+              </div>
+            )
+          }
+        </SpecSheet>
+      </aside>
+    </div>
+
+    {
+      galleryImages.length > 0 && (
+        <section class="container block" aria-labelledby="gallery-title">
+          <h2 id="gallery-title" class="section-title block-title">
+            <span class="label">A</span> {t('project.gallery')}
+          </h2>
+          <Gallery lang={lang} images={galleryImages} variant="grid" />
+        </section>
+      )
+    }
+
+    {
+      meta.model3d && (
+        <section class="container block" aria-labelledby="model-title">
+          <h2 id="model-title" class="section-title block-title">
+            <span class="label">B</span> {t('project.model')}
+          </h2>
+          <ModelViewer src={meta.model3d} alt={text.data.title} poster={meta.cover} lang={lang} />
+        </section>
+      )
+    }
+
+    {
+      meta.pdf && (
+        <section class="container block" aria-labelledby="docs-title">
+          <h2 id="docs-title" class="section-title block-title">
+            <span class="label">C</span> {t('project.downloads')}
+          </h2>
+          <div class="doc-card">
+            <Icon name="file" size={40} />
+            <div>
+              <p class="doc-title">{t('project.downloadPdf')}</p>
+              <p class="label">{text.data.title}</p>
+            </div>
+            <DownloadButton file={meta.pdf} label={t('project.pdf')} lang={lang} />
+          </div>
+        </section>
+      )
+    }
+
+    <nav class="container pager" aria-label={t('nav.projects')}>
+      {
+        prev ? (
+          <a class="pager-link" href={pathFor(lang, { name: 'project', slug: prev.slug })} rel="prev">
+            <span class="label">
+              <Icon name="arrow-left" /> {t('project.prev')}
+            </span>
+            <span class="pager-title">{prev.text.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next && (
+          <a class="pager-link next" href={pathFor(lang, { name: 'project', slug: next.slug })} rel="next">
+            <span class="label">
+              {t('project.next')} <Icon name="arrow-right" />
+            </span>
+            <span class="pager-title">{next.text.data.title}</span>
+          </a>
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-top: clamp(2rem, 5vw, 3.5rem);
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+  }
+  .back:hover {
+    color: var(--blue);
+  }
+  .meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+    margin-top: 2rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .num {
+    color: var(--blue);
+  }
+  h1 {
+    max-width: 22ch;
+    margin-top: 1.4rem;
+    font-size: var(--step-4);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+  .summary {
+    max-width: 60ch;
+    margin-top: 1.25rem;
+    font-size: var(--step-1);
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  .cover-wrap {
+    margin-top: clamp(2rem, 5vw, 3rem);
+  }
+  .cover-wrap :global(.cover) {
+    width: 100%;
+    max-height: 78vh;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+  }
+  .columns .prose > :global(:first-child) {
+    margin-top: 0;
+  }
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+  }
+  .side-download {
+    padding: 0.9rem;
+    border-top: 1.5px solid var(--ink);
+  }
+  .side-download :global(.btn) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .block {
+    margin-top: clamp(3.5rem, 8vw, 6rem);
+  }
+  .block-title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .block-title .label {
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1.5px solid var(--blue);
+    border-radius: 50%;
+    color: var(--blue);
+    letter-spacing: 0;
+  }
+
+  .doc-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+  }
+  .doc-card > :global(svg) {
+    color: var(--orange);
+  }
+  .doc-card div {
+    flex: 1 1 220px;
+  }
+  .doc-title {
+    font-weight: 600;
+  }
+
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: clamp(4rem, 9vw, 7rem);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .pager-link {
+    display: grid;
+    gap: 0.4rem;
+    max-width: 45%;
+    text-decoration: none;
+  }
+  .pager-link .label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pager-link.next {
+    text-align: right;
+    justify-items: end;
+    margin-left: auto;
+  }
+  .pager-title {
+    font-weight: 600;
+    font-size: var(--step-1);
+    line-height: 1.25;
+  }
+  .pager-link:hover .pager-title {
+    color: var(--blue);
+  }
+
+  @media (max-width: 960px) {
+    .columns {
+      grid-template-columns: 1fr;
+    }
+    .side {
+      position: static;
+      order: -1;
+    }
+  }
+</style>

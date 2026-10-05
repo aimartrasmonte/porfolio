@@ -1,0 +1,162 @@
+---
+// Formulari de contacte via Formspree (https://formspree.io). Configura FORMSPREE_ID a src/config.ts.
+import Icon from './Icon.astro';
+import { FORMSPREE_ID, PROFILE } from '../config';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const endpoint = FORMSPREE_ID ? `https://formspree.io/f/${FORMSPREE_ID}` : '';
+---
+
+<form
+  class="contact-form"
+  action={endpoint || `mailto:${PROFILE.email}`}
+  method="POST"
+  data-contact-form
+  data-endpoint={endpoint}
+  data-msg-sending={t('contact.sending')}
+  data-msg-ok={t('contact.ok')}
+  data-msg-error={t('contact.error')}
+>
+  {
+    !endpoint && (
+      <p class="notice">
+        {t('contact.notConfigured')} <a href={`mailto:${PROFILE.email}`}>{PROFILE.email}</a>
+      </p>
+    )
+  }
+  <div class="row">
+    <label>
+      <span class="label">{t('contact.name')}</span>
+      <input name="name" type="text" autocomplete="name" required />
+    </label>
+    <label>
+      <span class="label">{t('contact.email')}</span>
+      <input name="email" type="email" autocomplete="email" required />
+    </label>
+  </div>
+  <label>
+    <span class="label">{t('contact.message')}</span>
+    <textarea name="message" rows="6" required></textarea>
+  </label>
+  <!-- Camp parany anti-spam: els humans no el veuen -->
+  <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" class="visually-hidden" aria-hidden="true" />
+  <input type="hidden" name="_language" value={lang} />
+
+  <div class="submit">
+    <button class="btn btn--primary" type="submit" disabled={!endpoint}>
+      {t('contact.send')}
+      <Icon name="arrow-right" />
+    </button>
+    <p class="status" role="status" aria-live="polite"></p>
+  </div>
+</form>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-contact-form]').forEach((form) => {
+    const endpoint = form.dataset.endpoint;
+    if (!endpoint) return;
+    const status = form.querySelector<HTMLElement>('.status')!;
+    const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      button.disabled = true;
+      status.className = 'status';
+      status.textContent = form.dataset.msgSending ?? '';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        form.reset();
+        status.classList.add('ok');
+        status.textContent = form.dataset.msgOk ?? '';
+      } catch {
+        status.classList.add('error');
+        status.textContent = form.dataset.msgError ?? '';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>
+
+<style>
+  .contact-form {
+    display: grid;
+    gap: 1.1rem;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+  }
+  label {
+    display: grid;
+    gap: 0.4rem;
+  }
+  input,
+  textarea {
+    width: 100%;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 1rem;
+    transition: border-color 0.15s;
+  }
+  input:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px var(--blue-soft);
+  }
+  textarea {
+    resize: vertical;
+    min-height: 140px;
+  }
+  .submit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .status {
+    font-size: 0.9rem;
+    color: var(--ink-3);
+  }
+  .status.ok {
+    color: #1a7f4b;
+  }
+  .status.error {
+    color: var(--orange);
+  }
+  .notice {
+    padding: 0.8rem 1rem;
+    border-left: 3px solid var(--orange);
+    background: var(--paper-2);
+    font-size: 0.9rem;
+  }
+  .notice a {
+    color: var(--blue);
+  }
+  @media (max-width: 600px) {
+    .row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

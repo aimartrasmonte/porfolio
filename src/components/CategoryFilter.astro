@@ -1,0 +1,114 @@
+---
+// Filtre per categories. Només mostra les categories que tenen algun projecte.
+// L'estat es desa a la URL (?cat=nautica) perquè es pugui compartir l'enllaç.
+import type { CategoryKey, Lang } from '../i18n/ui';
+import { categoryName, useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  categories: { key: CategoryKey; count: number }[];
+  total: number;
+}
+const { lang, categories, total } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class="filter" data-filter hidden>
+  <p class="label" id="filter-label">{t('filter.label')}</p>
+  <div class="chips" role="group" aria-labelledby="filter-label">
+    <button type="button" data-cat="" aria-pressed="true">
+      {t('filter.all')} <span class="count">{total}</span>
+    </button>
+    {
+      categories.map(({ key, count }) => (
+        <button type="button" data-cat={key} aria-pressed="false">
+          {categoryName(key, lang)} <span class="count">{count}</span>
+        </button>
+      ))
+    }
+  </div>
+  <p class="empty" data-filter-empty hidden>{t('filter.empty')}</p>
+</div>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-filter]');
+  if (root) {
+    root.hidden = false; // sense JS no té sentit mostrar el filtre
+    const buttons = root.querySelectorAll<HTMLButtonElement>('button[data-cat]');
+    const projects = document.querySelectorAll<HTMLElement>('[data-categories]');
+    const empty = root.querySelector<HTMLElement>('[data-filter-empty]');
+
+    const apply = (cat: string, updateUrl = true) => {
+      let shown = 0;
+      projects.forEach((p) => {
+        const match = !cat || p.dataset.categories!.split(' ').includes(cat);
+        p.hidden = !match;
+        if (match) {
+          shown++;
+          p.classList.add('is-visible');
+        }
+      });
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === cat)));
+      if (empty) empty.hidden = shown > 0;
+      if (updateUrl) {
+        const url = new URL(location.href);
+        if (cat) url.searchParams.set('cat', cat);
+        else url.searchParams.delete('cat');
+        history.replaceState(null, '', url);
+      }
+    };
+
+    buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.cat ?? '')));
+
+    const initial = new URL(location.href).searchParams.get('cat') ?? '';
+    if (initial && [...buttons].some((b) => b.dataset.cat === initial)) apply(initial, false);
+  }
+</script>
+
+<style>
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+    margin-block: 2rem 1rem;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font: 500 0.85rem var(--font-sans);
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      color 0.15s,
+      border-color 0.15s;
+  }
+  button:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  button[aria-pressed='true'] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .count {
+    font: 0.7rem var(--font-mono);
+    opacity: 0.65;
+  }
+  .empty {
+    flex-basis: 100%;
+    color: var(--ink-3);
+  }
+</style>

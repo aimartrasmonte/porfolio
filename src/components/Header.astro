@@ -1,0 +1,390 @@
+---
+import Flag from './Flag.astro';
+import Icon from './Icon.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { CV_FILES, PROFILE } from '../config';
+import { LANG_NAMES, LANGS, type Lang } from '../i18n/ui';
+import { pathFor, useTranslations, withBase, type Route } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  route: Route;
+}
+const { lang, route } = Astro.props;
+const t = useTranslations(lang);
+
+const initials = PROFILE.name
+  .split(/\s+/)
+  .map((w) => w[0])
+  .slice(0, 2)
+  .join('')
+  .toUpperCase();
+
+const nav = [
+  { href: pathFor(lang, { name: 'home', hash: 'projectes' }), label: t('nav.projects'), active: route.name !== 'about' },
+  { href: pathFor(lang, { name: 'about' }), label: t('nav.about'), active: route.name === 'about' },
+  { href: pathFor(lang, { name: 'about', hash: 'contacte' }), label: t('nav.contact'), active: false },
+];
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href={pathFor(lang, { name: 'home' })}>
+      <span class="brand-mark" aria-hidden="true">{initials}</span>
+      <span class="brand-text">
+        <span class="brand-name">{PROFILE.name}</span>
+        <span class="brand-role">{t('meta.role')}</span>
+      </span>
+    </a>
+
+    <nav class="nav" id="site-nav" aria-label={t('nav.menu')}>
+      <ul class="nav-links">
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={item.active && route.name === 'about' ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="nav-tools">
+        <details class="dropdown cv-menu">
+          <summary class="btn btn--download">
+            <Icon name="download" />
+            {t('nav.cv')}
+            <Icon name="chevron-down" class="chev" />
+          </summary>
+          <ul class="dropdown-panel">
+            {
+              CV_FILES.map((cv) => (
+                <li>
+                  <a href={withBase(cv.file)} download hreflang={cv.lang}>
+                    <Flag lang={cv.lang} />
+                    <span class="mono">{cv.label}</span>
+                    {LANG_NAMES[cv.lang as Lang]}
+                    <Icon name="file" class="end" />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </details>
+
+        <ul class="langs" aria-label={t('nav.lang')}>
+          {
+            LANGS.map((l) => (
+              <li>
+                <a
+                  href={pathFor(l, route)}
+                  hreflang={l}
+                  lang={l}
+                  title={LANG_NAMES[l]}
+                  aria-current={l === lang ? 'true' : undefined}
+                >
+                  <Flag lang={l} />
+                  {l.toUpperCase()}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+
+        <ThemeToggle lang={lang} />
+      </div>
+    </nav>
+
+    <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false">
+      <span class="visually-hidden">{t('nav.menu')}</span>
+      <Icon name="menu" size={24} class="i-open" />
+      <Icon name="close" size={24} class="i-close" />
+    </button>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('.site-header');
+  const toggle = header?.querySelector<HTMLButtonElement>('.menu-toggle');
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    header?.classList.toggle('is-open', open);
+  });
+  header?.querySelectorAll('.nav-links a').forEach((a) =>
+    a.addEventListener('click', () => {
+      toggle?.setAttribute('aria-expanded', 'false');
+      header.classList.remove('is-open');
+    }),
+  );
+
+  // Tanca els desplegables en clicar fora o prémer Esc
+  const dropdowns = document.querySelectorAll<HTMLDetailsElement>('details.dropdown');
+  document.addEventListener('click', (e) => {
+    dropdowns.forEach((d) => {
+      if (!d.contains(e.target as Node)) d.open = false;
+    });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') dropdowns.forEach((d) => (d.open = false));
+  });
+
+  // Ombra de la capçalera en fer scroll
+  const onScroll = () => header?.classList.toggle('is-scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .site-header.is-scrolled {
+    border-bottom-color: var(--line-soft);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: var(--header-h);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    text-decoration: none;
+    min-width: 0;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border: 1.5px solid var(--ink);
+    font: 500 0.85rem var(--font-mono);
+    letter-spacing: 0.04em;
+  }
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    min-width: 0;
+  }
+  .brand-name {
+    font-weight: 650;
+    font-size: 0.98rem;
+  }
+  .brand-role {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--ink-3);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+  }
+  .nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+  .nav-links a {
+    position: relative;
+    font-size: 0.92rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--ink-2);
+    padding-block: 0.3rem;
+  }
+  .nav-links a:hover,
+  .nav-links a[aria-current] {
+    color: var(--ink);
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1.5px;
+    background: var(--blue);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+  }
+  .nav-links a:hover::after,
+  .nav-links a[aria-current]::after {
+    transform: scaleX(1);
+  }
+
+  .nav-tools {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .dropdown {
+    position: relative;
+  }
+  .dropdown summary {
+    list-style: none;
+  }
+  .dropdown summary::-webkit-details-marker {
+    display: none;
+  }
+  .dropdown :global(.chev) {
+    transition: transform 0.2s;
+  }
+  .dropdown[open] :global(.chev) {
+    transform: rotate(180deg);
+  }
+  .dropdown-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    min-width: 200px;
+    padding: 0.35rem !important;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .dropdown-panel a {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border-radius: 3px;
+  }
+  .dropdown-panel a:hover {
+    background: var(--orange-soft);
+  }
+  .dropdown-panel .mono {
+    color: var(--orange);
+  }
+  .dropdown-panel :global(.end) {
+    margin-left: auto;
+    color: var(--ink-3);
+  }
+
+  .langs {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .langs a {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.55rem;
+    font: 500 0.72rem var(--font-mono);
+    text-decoration: none;
+    color: var(--ink-3);
+  }
+  .langs li + li a {
+    border-left: 1px solid var(--line);
+  }
+  .langs a:hover {
+    color: var(--ink);
+  }
+  .langs a[aria-current] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .menu-toggle {
+    display: none;
+    padding: 0.4rem;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .menu-toggle :global(.i-close) {
+    display: none;
+  }
+
+  /* ─── Mòbil ─── */
+  @media (max-width: 860px) {
+    .menu-toggle {
+      display: block;
+    }
+    .nav {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.25rem;
+      padding: 1.25rem var(--gutter) 1.75rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      display: none;
+    }
+    .site-header.is-open .nav {
+      display: flex;
+    }
+    .site-header.is-open .menu-toggle :global(.i-open) {
+      display: none;
+    }
+    .site-header.is-open .menu-toggle :global(.i-close) {
+      display: block;
+    }
+    .nav-links {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .nav-links a {
+      display: block;
+      padding-block: 0.6rem;
+      font-size: 1.1rem;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .nav-links a::after {
+      display: none;
+    }
+    .nav-tools {
+      justify-content: space-between;
+    }
+    .dropdown-panel {
+      left: 0;
+      right: auto;
+    }
+  }
+  /* Sense JS, el menú es mostra sempre desplegat */
+  @media (max-width: 860px) {
+    :global(html:not(.js)) .nav {
+      position: static;
+      display: flex;
+      box-shadow: none;
+    }
+    :global(html:not(.js)) .menu-toggle {
+      display: none;
+    }
+  }
+</style>

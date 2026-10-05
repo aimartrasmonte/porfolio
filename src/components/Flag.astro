@@ -1,0 +1,55 @@
+---
+// Banderetes SVG per identificar l'idioma (ca: senyera, es: Espanya, en: Regne Unit).
+// En SVG i no en emoji perquè Windows no mostra els emojis de bandera.
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+const { lang, class: className } = Astro.props;
+
+const flags: Record<Lang, { viewBox: string; svg: string }> = {
+  ca: {
+    viewBox: '0 0 27 18',
+    svg:
+      '<rect width="27" height="18" fill="#FCDD09"/>' +
+      '<path d="M0 3h27M0 7h27M0 11h27M0 15h27" stroke="#DA121A" stroke-width="2"/>',
+  },
+  es: {
+    viewBox: '0 0 3 2',
+    svg: '<rect width="3" height="2" fill="#AA151B"/><rect y="0.5" width="3" height="1" fill="#F1BF00"/>',
+  },
+  en: {
+    viewBox: '0 0 60 30',
+    svg:
+      '<rect width="60" height="30" fill="#012169"/>' +
+      '<path d="M0 0l60 30M60 0L0 30" stroke="#fff" stroke-width="6"/>' +
+      '<path d="M0 0l60 30M60 0L0 30" stroke="#C8102E" stroke-width="2"/>' +
+      '<path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>' +
+      '<path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/>',
+  },
+};
+const flag = flags[lang];
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox={flag.viewBox}
+  preserveAspectRatio="xMidYMid slice"
+  class:list={['flag', className]}
+  aria-hidden="true"
+  set:html={flag.svg}
+/>
+
+<style>
+  .flag {
+    display: inline-block;
+    flex: none;
+    width: 1.35em;
+    height: 0.9em;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.12);
+    vertical-align: -0.1em;
+  }
+</style>

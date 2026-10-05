@@ -1,0 +1,116 @@
+---
+import Icon from './Icon.astro';
+import CvButtons from './CvButtons.astro';
+import { PROFILE } from '../config';
+import type { Lang } from '../i18n/ui';
+import { pathFor, useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer blueprint-grid">
+  <div class="container">
+    <div class="cols">
+      <div class="who">
+        <p class="name">{PROFILE.name}</p>
+        <p class="label">{t('meta.role')}</p>
+      </div>
+
+      <ul class="links">
+        <li>
+          <a href={`mailto:${PROFILE.email}`}><Icon name="mail" /> {PROFILE.email}</a>
+        </li>
+        {
+          PROFILE.linkedin && (
+            <li>
+              <a href={PROFILE.linkedin} rel="noopener" target="_blank"><Icon name="linkedin" /> LinkedIn</a>
+            </li>
+          )
+        }
+        {
+          PROFILE.github && (
+            <li>
+              <a href={PROFILE.github} rel="noopener" target="_blank"><Icon name="github" /> GitHub</a>
+            </li>
+          )
+        }
+        <li>
+          <a href={pathFor(lang, { name: 'about', hash: 'contacte' })}><Icon name="arrow-right" /> {t('nav.contact')}</a>
+        </li>
+      </ul>
+
+      <CvButtons lang={lang} showTitle variant="compact" />
+    </div>
+
+    <hr class="dim-line" />
+
+    <div class="bottom">
+      <span class="label">© {year} {PROFILE.name}</span>
+      <a class="label top" href="#main">{t('footer.top')} <Icon name="arrow-up" /></a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: clamp(4rem, 10vw, 8rem);
+    padding-block: 3rem 2rem;
+    border-top: 1px solid var(--line);
+    background-color: var(--paper-2);
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr auto;
+    gap: 2rem;
+    align-items: start;
+    margin-bottom: 2.5rem;
+  }
+  .name {
+    font-weight: 650;
+    font-size: var(--step-1);
+  }
+  .links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.92rem;
+    color: var(--ink-2);
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .links a:hover {
+    color: var(--blue);
+  }
+  .bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 1.25rem;
+  }
+  .top {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+  }
+  .top:hover {
+    color: var(--blue);
+  }
+  @media (max-width: 760px) {
+    .cols {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

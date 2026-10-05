@@ -1,0 +1,15 @@
+# Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
+order: 6
+year: 2024
+categories: [cad, electronica, simulacio]
+cover: ./images/cover.jpg
+gallery:
+  - ./images/01.jpg
+  - ./images/02.jpg
+  - ./images/03.jpg
+  - ./images/04.jpg
+  - ./images/05.jpg
+software: [SolidWorks, Arduino IDE, Python]
+# pdf: projects/banc-assaig/memoria.pdf      (opcional, fitxer dins de /public)
+# model3d: projects/banc-assaig/model.glb   (opcional, model 3D per al visor)
+draft: true # projecte de PROVA: amagat. Esborra la carpeta o substitueix-ne el contingut.

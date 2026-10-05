@@ -1,0 +1,96 @@
+---
+// Fitxa tècnica amb aspecte de caixetí de plànol.
+import type { Lang } from '../i18n/ui';
+import { categoryName, useTranslations } from '../i18n/utils';
+import type { Project } from '../lib/projects';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+}
+const { project, lang } = Astro.props;
+const { meta, text } = project;
+const t = useTranslations(lang);
+
+const rows = [
+  { label: t('specs.year'), value: meta.year ? String(meta.year) : undefined },
+  { label: t('specs.context'), value: text.data.context },
+  { label: t('specs.duration'), value: text.data.duration },
+  { label: t('specs.role'), value: text.data.role },
+  { label: t('specs.categories'), value: meta.categories.map((c) => categoryName(c, lang)).join(', ') },
+  { label: t('specs.software'), list: meta.software },
+  { label: t('specs.manufacturing'), list: text.data.manufacturing },
+  { label: t('specs.materials'), list: text.data.materials },
+].filter((r) => (r.list ? r.list.length > 0 : !!r.value));
+---
+
+<section class="specs" aria-labelledby="specs-title">
+  <h2 id="specs-title" class="label">{t('project.specs')}</h2>
+  <dl>
+    {
+      rows.map((r) => (
+        <div class="row">
+          <dt>{r.label}</dt>
+          <dd>
+            {r.list ? (
+              <ul>
+                {r.list.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            ) : (
+              r.value
+            )}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+  <slot />
+</section>
+
+<style>
+  .specs {
+    border: 1.5px solid var(--ink);
+    background: var(--surface);
+  }
+  h2 {
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1.5px solid var(--ink);
+    color: var(--ink);
+    letter-spacing: 0.12em;
+  }
+  dl {
+    margin: 0;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child {
+    border-bottom: 0;
+  }
+  dt {
+    padding: 0.6rem 0.9rem;
+    border-right: 1px solid var(--line);
+    font: 0.72rem/1.5 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+  dd {
+    margin: 0;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li + li {
+    margin-top: 0.2rem;
+  }
+</style>
