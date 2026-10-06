@@ -6,7 +6,7 @@ import sitemap from "@astrojs/sitemap"
 // Quan tinguis usuari de GitHub, canvia SITE (i BASE si el repo NO es diu
 // "usuari.github.io"; per exemple, repo "porfolio" → BASE = '/porfolio').
 const SITE = "https://aimartrasmonte.github.io"
-const BASE = "/porfolio/"
+const BASE = "/portfolio/"
 
 export default defineConfig({
   site: SITE,
