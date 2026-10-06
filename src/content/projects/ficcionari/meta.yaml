@@ -8,7 +8,7 @@ gallery:
   - ./images/portada.png
   - ./images/lobby.png
   - ./images/seleccio-paraula.png
-  - ./images/escriure definició.jpeg
+  - ./images/escriure-definicio.jpeg
   - ./images/resultats-1.jpeg
   - ./images/resultats-2.jpeg
 software: [React, TypeScript, Supabase, Tailwind CSS, Vite, Vercel]
