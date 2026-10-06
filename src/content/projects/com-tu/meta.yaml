@@ -23,7 +23,7 @@ gallery:
 software: [SolidWorks] # p. ex. [SolidWorks, ANSYS] — pendent d'omplir
 # ⚠ La memòria i el model 3D són fitxers PROVISIONALS: substitueix-los pels reals
 # (la memòria del TFG i un .glb del veler) abans de publicar.
-model3d: projects/com-tu/com-tu-2.glb
+model3d: projects/com-tu/com-tu-2-compressed.glb
 # (opcional) aspecte del model 3D. Treu les línies que no vulguis.
 modelStyle:
   opacity: 0.6 # 1 = opac · 0.3 = molt translúcid

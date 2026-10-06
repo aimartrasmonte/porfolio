@@ -120,10 +120,12 @@ const t = useTranslations(lang);
       };
       if (style.edges) addLines(new EdgesGeometry(mesh.geometry, style.edgeAngle), lineMaterial);
       if (style.tangentEdges) {
+        // getComponent desfà l'entrellaçat i la quantització (models comprimits)
         const p = mesh.geometry.attributes.position;
-        const positions = p.isInterleavedBufferAttribute
-          ? Float32Array.from({ length: p.count * 3 }, (_, i) => p.getComponent(Math.floor(i / 3), i % 3))
-          : p.array;
+        const positions =
+          p.isInterleavedBufferAttribute || p.normalized
+            ? Float32Array.from({ length: p.count * 3 }, (_, i) => p.getComponent(Math.floor(i / 3), i % 3))
+            : p.array;
         const segments = tangentEdges(positions, mesh.geometry.index?.array ?? null, style.edgeAngle);
         if (segments?.length) {
           const g = new BufferGeometry();
@@ -171,6 +173,13 @@ const t = useTranslations(lang);
       const mv = v.querySelector<MVElement>('model-viewer');
       if (mv) setup(mv);
     });
+    // Models comprimits amb meshopt (gltfpack / glTF-Transform): <model-viewer> ja porta el
+    // descompressor, però només l'activa si se li dona `meshoptDecoderLocation` (carrega
+    // aquest script i després fa servir el seu). Un script buit n'hi ha prou, sense dependre d'un CDN.
+    (self as any).ModelViewerElement = {
+      ...(self as any).ModelViewerElement,
+      meshoptDecoderLocation: 'data:text/javascript,',
+    };
     const load = () => import('@google/model-viewer/dist/model-viewer-module.js');
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(

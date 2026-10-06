@@ -26,7 +26,7 @@ gallery:
   - video: ./images/VID-20240526-WA0043.mp4
 software: [MaxSurf Suite, SolidWorks, Bambu Studio]
 pdf: projects/haddock/TFE_Trasmonte_Domenech_Aimar_GETI.pdf
-model3d: projects/haddock/haddock.glb
+model3d: projects/haddock/haddock-compressed.glb
 # (opcional) aspecte del model 3D. Treu les línies que no vulguis.
 modelStyle:
   opacity: 0.4 # 1 = opac · 0.3 = molt translúcid

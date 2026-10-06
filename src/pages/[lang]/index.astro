@@ -27,7 +27,7 @@ const featured = projects.find((p) => p.meta.hero) ?? projects[0];
 const about = (await getEntry('about', lang)) ?? (await getEntry('about', 'ca'));
 ---
 
-<BaseLayout lang={lang} route={{ name: 'home' }}>
+<BaseLayout lang={lang} route={{ name: 'home' }} image={about?.data.avatar ?? about?.data.photo}>
   <Hero
     lang={lang}
     image={featured && {
