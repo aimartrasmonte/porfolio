@@ -2,7 +2,7 @@
 // Galeria d'imatges i vídeos amb lightbox (PhotoSwipe).
 // - variant "grid": tots els elements en columnes (pàgina de projecte)
 // - variant "strip": tira de miniatures; mostra `visible` elements i un "+N"
-//   a l'últim, però el lightbox els inclou tots (home)
+//   a l'últim, però el lightbox els inclou tots (home). Amb column, en vertical.
 import { getImage, Image } from 'astro:assets';
 import Icon from './Icon.astro';
 import type { Lang } from '../i18n/ui';
@@ -14,8 +14,9 @@ interface Props {
   images: Media[];
   variant?: 'grid' | 'strip';
   visible?: number;
+  column?: boolean;
 }
-const { lang, images, variant = 'grid', visible = 4 } = Astro.props;
+const { lang, images, variant = 'grid', visible = 4, column = false } = Astro.props;
 const t = useTranslations(lang);
 
 const items = await Promise.all(
@@ -38,7 +39,7 @@ const thumbSizes =
     : '(max-width: 600px) 100vw, (max-width: 1000px) 50vw, 400px';
 ---
 
-<div class:list={['gallery', `gallery--${variant}`, 'pswp-gallery']}>
+<div class:list={['gallery', `gallery--${variant}`, { 'gallery--column': column }, 'pswp-gallery']}>
   {
     items.map((item, i) => {
       const hidden = variant === 'strip' && i >= visible;
@@ -111,19 +112,49 @@ const thumbSizes =
       return {
         ...itemData,
         type: 'html',
-        html: `<div class="pswp-video"><video src="${escapeAttr(src)}"${poster} controls playsinline preload="metadata"></video></div>`,
+        // Sense so i sense controls natius (així no es pot activar l'àudio):
+        // clic per aturar/reprendre i una barra de progrés
+        html: `<div class="pswp-video"><div class="pswp-video__box"><video src="${escapeAttr(src)}"${poster} muted loop playsinline disableremoteplayback preload="metadata"></video><span class="pswp-video__state" aria-hidden="true"></span><span class="pswp-video__bar"><span></span></span></div></div>`,
       };
     });
+    const setupVideo = (box: HTMLElement) => {
+      const video = box.querySelector('video')!;
+      if (box.dataset.ready) return video;
+      box.dataset.ready = '';
+      const bar = box.querySelector<HTMLElement>('.pswp-video__bar > span')!;
+      video.addEventListener('volumechange', () => (video.muted = true));
+      video.addEventListener('timeupdate', () => {
+        bar.style.width = `${(video.currentTime / video.duration) * 100 || 0}%`;
+      });
+      video.addEventListener('play', () => box.classList.remove('is-paused'));
+      video.addEventListener('pause', () => box.classList.add('is-paused'));
+      box.addEventListener('click', () => togglePlay(box)); // ratolí
+      return video;
+    };
+    // Clic o toc sobre el vídeo: atura/reprèn. El temps evita el doble canvi
+    // quan un toc dispara alhora l'esdeveniment de PhotoSwipe i el clic natiu.
+    let lastToggle = 0;
+    const togglePlay = (box: HTMLElement) => {
+      if (performance.now() - lastToggle < 400) return;
+      lastToggle = performance.now();
+      const video = setupVideo(box);
+      if (video.paused) video.play().catch(() => {});
+      else video.pause();
+    };
     // Reprodueix el vídeo de la diapositiva activa i atura els altres
     lightbox.on('contentActivate', ({ content }) => {
-      content.element?.querySelector('video')?.play().catch(() => {});
+      const box = content.element?.querySelector<HTMLElement>('.pswp-video__box');
+      if (box) setupVideo(box).play().catch(() => box.classList.add('is-paused'));
     });
     lightbox.on('contentDeactivate', ({ content }) => {
       content.element?.querySelector('video')?.pause();
     });
-    // Sobre el vídeo, arrossegar mou la barra de temps en lloc de canviar de diapositiva
-    lightbox.on('pointerDown', (e) => {
-      if ((e.originalEvent.target as Element | null)?.closest?.('.pswp-video video')) e.preventDefault();
+    // Toc (pantalla tàctil): en lloc d'amagar els controls del visor, atura/reprèn
+    lightbox.on('tapAction', (e) => {
+      const box = (e.originalEvent.target as Element | null)?.closest?.<HTMLElement>('.pswp-video__box');
+      if (!box) return;
+      e.preventDefault();
+      togglePlay(box);
     });
 
     // Peu de foto a la part inferior
@@ -238,6 +269,10 @@ const thumbSizes =
     grid-template-columns: repeat(4, 1fr);
     gap: 0.5rem;
   }
+  .gallery--column {
+    grid-template-columns: 1fr;
+    align-content: start;
+  }
   .gallery--strip .hidden {
     display: none;
   }
@@ -263,10 +298,49 @@ const thumbSizes =
     height: 100%;
     padding: 60px 16px 72px;
   }
+  :global(.pswp-video__box) {
+    position: relative;
+    max-width: 100%;
+    cursor: pointer;
+  }
   :global(.pswp-video video) {
+    display: block;
     max-width: 100%;
     max-height: calc(100dvh - 132px);
     background: #000;
+  }
+  :global(.pswp-video__bar) {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgb(255 255 255 / 0.25);
+  }
+  :global(.pswp-video__bar > span) {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--orange);
+  }
+  /* Icona de pausa: només quan el vídeo està aturat */
+  :global(.pswp-video__state) {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4rem;
+    height: 4rem;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: var(--orange)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8.5 5.5v13l10.5-6.5z' fill='%231b1f24'/%3E%3C/svg%3E")
+      center / 1.6rem no-repeat;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  :global(.pswp-video__box.is-paused .pswp-video__state) {
+    opacity: 1;
   }
   :global(.pswp__caption) {
     position: absolute;

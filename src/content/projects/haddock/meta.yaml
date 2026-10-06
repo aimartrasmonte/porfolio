@@ -1,0 +1,11 @@
+# Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
+order: 2
+year: 2024
+categories: [nautica, cad, simulacio, fabricacio]
+cover: ./images/cover.jpg
+galleryLayout: below # side = miniatures al costat (per a fotos verticals)
+# Afegeix aquí les fotos i vídeos (els suggeriments de cada secció són als comentaris de ca.md)
+gallery: []
+software: [MaxSurf Modeler, MaxSurf Stability, MaxSurf Resistance, SolidWorks, Bambu Studio]
+pdf: projects/haddock/TFE_Trasmonte_Domenech_Aimar_GETI.pdf
+draft: false

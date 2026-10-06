@@ -22,7 +22,8 @@ const categories = CATEGORY_KEYS.map((key) => ({
   count: projects.filter((p) => p.meta.categories.includes(key)).length,
 })).filter((c) => c.count > 0);
 
-const featured = projects[0];
+// Imatge del hero: el primer projecte amb `hero:` al meta.yaml, o la portada del primer projecte
+const featured = projects.find((p) => p.meta.hero) ?? projects[0];
 const about = (await getEntry('about', lang)) ?? (await getEntry('about', 'ca'));
 ---
 
@@ -30,7 +31,7 @@ const about = (await getEntry('about', lang)) ?? (await getEntry('about', 'ca'))
   <Hero
     lang={lang}
     image={featured && {
-      src: featured.meta.cover,
+      src: featured.meta.hero ?? featured.meta.cover,
       title: featured.text.data.title,
       href: pathFor(lang, { name: 'project', slug: featured.slug }),
     }}

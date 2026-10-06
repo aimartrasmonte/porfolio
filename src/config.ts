@@ -4,6 +4,7 @@
 
 export const PROFILE = {
   name: 'Aimar Trasmonte Domenech',
+  shortName: 'Aimar T.D.', // nom curt per al títol de la pestanya
   email: 'aimartd11@gmail.com',
   linkedin: 'https://www.linkedin.com/in/aimar-trasmonte/',
   github: '', // p. ex. 'https://github.com/usuari' (deixa-ho buit per amagar-ho)

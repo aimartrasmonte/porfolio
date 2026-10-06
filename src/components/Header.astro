@@ -27,7 +27,7 @@ const nav = [
 ];
 ---
 
-<header class="site-header">
+<header class="site-header" data-hide-brand={route.name === 'home' ? '' : undefined}>
   <div class="container bar">
     <a class="brand" href={pathFor(lang, { name: 'home' })}>
       <span class="brand-mark" aria-hidden="true">{initials}</span>
@@ -130,6 +130,18 @@ const nav = [
     if (e.key === 'Escape') dropdowns.forEach((d) => (d.open = false));
   });
 
+  // A la portada, el nom de la capçalera només apareix quan el del hero ja no es veu
+  const heroName = document.querySelector('.hero .name');
+  if (header?.hasAttribute('data-hide-brand')) {
+    if (heroName) {
+      const h = header.offsetHeight;
+      new IntersectionObserver(
+        ([e]) => header.classList.toggle('show-brand', !e.isIntersecting && e.boundingClientRect.top < h),
+        { rootMargin: `-${h}px 0px 0px 0px` },
+      ).observe(heroName);
+    } else header.classList.add('show-brand');
+  }
+
   // Ombra de la capçalera en fer scroll
   const onScroll = () => header?.classList.toggle('is-scrolled', window.scrollY > 8);
   onScroll();
@@ -176,10 +188,18 @@ const nav = [
     letter-spacing: 0.04em;
   }
   .brand-text {
+    transition:
+      opacity 0.3s,
+      translate 0.3s;
     display: flex;
     flex-direction: column;
     line-height: 1.2;
     min-width: 0;
+  }
+  :global(html.js) .site-header[data-hide-brand]:not(.show-brand) .brand-text {
+    opacity: 0;
+    translate: 0 6px;
+    pointer-events: none;
   }
   .brand-name {
     font-weight: 650;

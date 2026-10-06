@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- La mateixa caixa amb les inicials que la capçalera: fons transparent,
+       traç i lletres negres amb el navegador clar i blancs amb el fosc -->
   <style>
-    .b { stroke: #123778; }
-    .o { stroke: #fb410e; }
-    @media (prefers-color-scheme: dark) { .b { stroke: #7fa2ec; } }
+    .c { color: #1b1f24; }
+    @media (prefers-color-scheme: dark) { .c { color: #ffffff; } }
   </style>
-  <g fill="none" stroke-width="2.2">
-    <circle class="b" cx="16" cy="16" r="11"/>
-    <circle class="o" cx="16" cy="16" r="4"/>
-    <path class="b" d="M16 1v8M16 23v8M1 16h8M23 16h8" stroke-linecap="round"/>
+  <g class="c">
+    <rect x="1.25" y="1.25" width="29.5" height="29.5" fill="none" stroke="currentColor" stroke-width="2.5"/>
+    <text x="16" y="16.8" text-anchor="middle" dominant-baseline="central" fill="currentColor"
+      font-family="'JetBrains Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="17.5" font-weight="800"
+      letter-spacing="-0.6">AT</text>
   </g>
 </svg>

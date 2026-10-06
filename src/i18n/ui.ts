@@ -31,6 +31,7 @@ export const ui = {
   ca: {
     'meta.description': 'Porfoli d\'enginyeria mecànica: disseny, càlcul (FEA) i fabricació — velers RC de competició, instruments musicals i més.',
     'meta.role': 'Enginyer industrial · Especialitat mecànica',
+    'meta.tabRole': 'Enginyer Industrial',
     'nav.projects': 'Projectes',
     'nav.about': 'Sobre mi',
     'nav.contact': 'Contacte',
@@ -104,6 +105,7 @@ export const ui = {
   es: {
     'meta.description': 'Porfolio de ingeniería mecánica: diseño, cálculo (FEA) y fabricación — veleros RC de competición, instrumentos musicales y más.',
     'meta.role': 'Ingeniero industrial · Especialidad mecánica',
+    'meta.tabRole': 'Ingeniero Industrial',
     'nav.projects': 'Proyectos',
     'nav.about': 'Sobre mí',
     'nav.contact': 'Contacto',
@@ -177,6 +179,7 @@ export const ui = {
   en: {
     'meta.description': 'Mechanical engineering portfolio: design, analysis (FEA) and manufacturing — competition RC sailboats, musical instruments and more.',
     'meta.role': 'Industrial engineer · Mechanical specialisation',
+    'meta.tabRole': 'Industrial Engineer',
     'nav.projects': 'Projects',
     'nav.about': 'About',
     'nav.contact': 'Contact',

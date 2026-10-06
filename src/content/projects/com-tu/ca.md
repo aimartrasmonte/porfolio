@@ -1,6 +1,6 @@
 ---
-title: Velers RC de competició
-summary: Disseny i construcció de dos velers de ràdio control amb impressió 3D i fibra de vidre i epoxi. Va començar com a Treball de Fi de Grau (matrícula d'honor) i ha quedat sotscampió de la Regata RC Sailing Barcelona el 2024 i el 2025.
+title: "Com Tu: RC Sailing Barcelona 2025"
+summary: Catamarà RC imprès en 3D.
 context: TFG (matrícula d'honor) i projecte personal
 role: Disseny i construcció
 manufacturing: [Impressió 3D, Laminat de fibra de vidre i epoxi]

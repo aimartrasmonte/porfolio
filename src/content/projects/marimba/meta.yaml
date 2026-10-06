@@ -1,15 +1,13 @@
 # Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
-order: 2
-# year: 2025          (pendent d'omplir)
+order: 3
+year: 2023
 categories: [lutieria, simulacio, fabricacio]
-cover: ./images/cover.jpg
+cover: ./images/marimba-acabada.jpg
+galleryLayout: below # side = miniatures al costat (per a fotos verticals)
+# ⚠ Les imatges actuals són PROVISIONALS: substitueix-les per les reals
+# (els suggeriments de cada secció són als comentaris de ca.md)
 gallery:
-  - ./images/01.jpg
-  - ./images/02.jpg
-  - ./images/03.jpg
-  - ./images/04.jpg
-  - ./images/05.jpg
-software: [ANSYS]
-# pdf: projects/marimba/memoria.pdf      (opcional, fitxer dins de /public)
-# model3d: projects/marimba/model.glb   (opcional, model 3D per al visor)
+  - ./images/marimba-acabada-2.jpg
+software: [ANSYS Mechanical APDL, MATLAB]
+pdf: projects/marimba/Memoria_Marimba_Aimar_Trasmonte.pdf
 draft: false

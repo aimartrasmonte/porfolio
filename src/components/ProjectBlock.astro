@@ -21,6 +21,9 @@ const num = (n: number) => String(n).padStart(2, '0');
 
 const galleryImages = projectMedia(project, lang);
 
+// galleryLayout: side → imatge gran vertical i miniatures en columna al costat
+const side = meta.galleryLayout === 'side';
+
 // Carrusel de la imatge gran: portada + tots els elements de la galeria
 const trackId = `slides-${slug}`;
 const slides = await Promise.all([
@@ -42,7 +45,7 @@ const slides = await Promise.all([
   data-categories={meta.categories.join(' ')}
   aria-labelledby={`p-${slug}`}
 >
-  <div class="media">
+  <div class:list={['media', { 'media--side': side }]}>
     <div class="cover" data-carousel>
       <div class="track" id={trackId}>
         {
@@ -90,7 +93,7 @@ const slides = await Promise.all([
         )
       }
     </div>
-    {galleryImages.length > 0 && <Gallery lang={lang} images={galleryImages} variant="strip" />}
+    {galleryImages.length > 0 && <Gallery lang={lang} images={galleryImages} variant="strip" column={side} />}
   </div>
 
   <div class="body">
@@ -210,6 +213,33 @@ const slides = await Promise.all([
     display: grid;
     gap: 0.5rem;
   }
+  /* Miniatures al costat: la imatge gran passa a vertical (3:4). Amb 4 miniatures
+     quadrades en una columna d'1/4 d'amplada, les dues columnes fan la mateixa alçada. */
+  .media--side {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  /* La imatge gran s'estira fins a l'alçada de la columna de miniatures (mínim 3:4) */
+  .media--side .cover {
+    align-self: stretch;
+    width: 100%; /* l'amplada la fixa la columna; l'aspect-ratio només dona l'alçada mínima */
+    aspect-ratio: 3 / 4;
+  }
+  .media--side .track,
+  .media--side .slide,
+  .media--side .slide :global(picture) {
+    display: block;
+    height: 100%;
+  }
+  .media--side .track {
+    display: flex;
+  }
+  .media--side .slide :global(img),
+  .media--side .slide video {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
   /* ─── Carrusel de la imatge gran ─── */
   .cover {
     position: relative;

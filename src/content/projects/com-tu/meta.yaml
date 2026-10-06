@@ -1,16 +1,18 @@
 # Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
 order: 1
-year: 2024 – 2025
+year: 2025
 categories: [nautica, cad, fabricacio]
-cover: ./images/com-tu-mar-1.jpg
+cover: ./images/com-tu-mar-2.jpg
+hero: ./images/com-tu-mar-1.jpg # (opcional) imatge gran de dalt de tot de la portada
+galleryLayout: side # miniatures al costat de la imatge gran (below = a sota)
 gallery:
-  - ./images/com-tu-mar-2.jpg
+  - ./images/com-tu-mar-1.jpg
   - ./images/com-tu-premis.jpg
   - ./images/com-tu-equip.jpg
   - video: ./images/video-navegant-1.mp4
   - video: ./images/video-navegant-2.mp4
   - video: ./images/video-servos.mp4
-software: [] # p. ex. [SolidWorks, ANSYS] — pendent d'omplir
+software: [SolidWorks] # p. ex. [SolidWorks, ANSYS] — pendent d'omplir
 # ⚠ La memòria i el model 3D són fitxers PROVISIONALS: substitueix-los pels reals
 # (la memòria del TFG i un .glb del veler) abans de publicar.
 pdf: projects/velers-rc/memoria.pdf

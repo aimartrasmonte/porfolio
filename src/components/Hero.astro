@@ -59,8 +59,8 @@ const t = useTranslations(lang);
               src={image.src}
               alt={image.title}
               formats={['avif', 'webp']}
-              widths={[560, 900, 1200]}
-              sizes="(max-width: 900px) 100vw, 45vw"
+              widths={[440, 880, 1320]}
+              sizes="(max-width: 900px) 100vw, 440px"
               loading="eager"
               fetchpriority="high"
             />
@@ -88,7 +88,7 @@ const t = useTranslations(lang);
   }
   .grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     gap: clamp(2rem, 5vw, 5rem);
     align-items: center;
   }
@@ -104,10 +104,9 @@ const t = useTranslations(lang);
     width: 96px;
     height: 96px;
     padding: 3px;
-    border: 2px solid var(--blue);
+    border: 2px solid var(--orange);
     border-radius: 50%;
     background: var(--paper);
-    box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px var(--orange);
     transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
   .avatar:hover {
@@ -169,6 +168,9 @@ const t = useTranslations(lang);
 
   .frame {
     position: relative;
+    width: 100%;
+    max-width: 440px;
+    justify-self: center;
     margin: 0 1.75rem 3.5rem 0;
   }
   .frame a {
@@ -179,7 +181,7 @@ const t = useTranslations(lang);
   }
   .frame :global(img) {
     width: 100%;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 5 / 8; /* vertical */
     object-fit: cover;
     transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
   }

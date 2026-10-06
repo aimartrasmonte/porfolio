@@ -24,6 +24,12 @@ const projectMeta = defineCollection({
       gallery: z
         .array(z.union([image(), z.object({ video: z.string(), poster: image().optional() })]))
         .default([]),
+      // A la portada: miniatures de la galeria a sota de la imatge gran ("below")
+      // o al costat ("side", millor per a fotos verticals)
+      galleryLayout: z.enum(['below', 'side']).default('below'),
+      // Imatge del requadre gran de dalt de tot de la portada (FIG. 01). Es fa servir
+      // la del primer projecte (per `order`) que la tingui; si cap en té, la `cover` del primer.
+      hero: image().optional(),
       software: z.array(z.string()).default([]),
       pdf: z.string().optional(), // camí dins de /public, p. ex. 'projects/velers-rc/memoria.pdf'
       model3d: z.string().optional(), // camí dins de /public, p. ex. 'projects/velers-rc/model.glb'

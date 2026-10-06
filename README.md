@@ -49,6 +49,8 @@ src/content/projects/velers-rc/
        poster: ./images/regata.jpg
      ```
      Fes servir `.mp4` (H.264), que funciona a tots els navegadors, i intenta que pesi menys de 10 MB (amb HandBrake, preset "Web").
+   - `galleryLayout` (opcional): `below` (per defecte) posa les miniatures a sota de la imatge gran a la portada; `side` les posa en columna al costat i fa la imatge gran vertical (ideal per a fotos verticals).
+   - `hero` (opcional): imatge del requadre gran de dalt de tot de la portada. Es fa servir la del primer projecte (per `order`) que en tingui; si cap en té, la `cover` del primer projecte.
    - `pdf` / `model3d`: opcionals. El fitxer va a `public/projects/<slug>/` i aquí s'hi posa el camí sense `/` inicial.
    - `draft: true` amaga el projecte sense esborrar-lo.
 4. Escriu `ca.md`. Els `captions` són els peus de foto, en el mateix ordre que `gallery`. Si un element d'una llista porta comes, posa'l entre cometes: `"Impressió 3D (FDM, SLS)"`.
