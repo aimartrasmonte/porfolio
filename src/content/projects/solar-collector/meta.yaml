@@ -1,0 +1,30 @@
+# Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
+order: 6
+year: 2024
+categories: [cad, simulacio]
+cover: ./images/explosionat.jpg
+galleryLayout: below # side = miniatures al costat (per a fotos verticals)
+# Renders i esquemes en l'ordre de l'article (els peus de foto són a captions de ca/es/en.md)
+gallery:
+  - ./images/panell-tancat.jpg
+  - ./images/seccio-coberta.jpg
+  - ./images/seccio-capes.png
+  - ./images/absorbidor.jpg
+  - ./images/absorbidor-detall-1.jpg
+  - ./images/absorbidor-detall-2.jpg
+  - ./images/coeficients-conveccio.png
+  - ./images/esquema-instal-lacio.png
+software: [SolidWorks, SolarSym]
+pdf: projects/solar-collector/SECS_Aimar_Trasmonte.pdf
+model3d: projects/solar-collector/solar-collector.glb
+# (opcional) aspecte del model 3D. Treu les línies que no vulguis.
+modelStyle:
+  opacity: 0.4 # 1 = opac · 0.3 = molt translúcid
+  # color: '#dfe6ee' # força un color a tot el model (treu les textures)
+  edges: true # dibuixa les arestes vives
+  # edgeColor: '#123778' # per defecte, el blau del web
+  # edgeColorDark: '#ff6233' # en mode fosc; per defecte, el taronja del web
+  edgeAngle: 30 # graus: més alt = menys arestes (només les més marcades)
+  tangentEdges: true # línies de tangència (entre cares que s'uneixen suaument)
+  tangentOpacity: 0.8 # 1 = tan marcades com les arestes · 0.15 = molt suaus
+draft: false

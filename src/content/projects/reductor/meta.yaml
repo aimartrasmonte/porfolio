@@ -1,0 +1,34 @@
+# Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
+order: 4
+year: 2025
+categories: [cad, fabricacio]
+cover: ./images/render-portada.jpg
+galleryLayout: below # side = miniatures al costat (per a fotos verticals)
+# Renders i plànols en l'ordre de l'article (els peus de foto són a captions de ca/es/en.md)
+gallery:
+  - ./images/render-darrere.jpg
+  - ./images/engranatge-rodaments.png
+  - ./images/explosionat-sencer.png
+  - ./images/explosionat-roda.png
+  - ./images/explosionat-vis.png
+  - ./images/carcassa-1.png
+  - ./images/carcassa-2.png
+  - ./images/explosionat-muntatge.png
+  - ./images/diagrama-cos-lliure.png
+  - ./images/planol-muntatge.png
+  - ./images/planol-carcassa-inferior.png
+  - ./images/planol-eix-sortida.png
+software: [SolidWorks]
+pdf: projects/reductor/Memòria_Reductor_Aimar_Trasmonte.pdf
+model3d: projects/reductor/reductor-compressed.glb
+# (opcional) aspecte del model 3D. Treu les línies que no vulguis.
+modelStyle:
+  opacity: 0.3 # 1 = opac · 0.3 = molt translúcid
+  # color: '#dfe6ee' # força un color a tot el model (treu les textures)
+  edges: true # dibuixa les arestes vives
+  # edgeColor: '#123778' # per defecte, el blau del web
+  # edgeColorDark: '#ff6233' # en mode fosc; per defecte, el taronja del web
+  edgeAngle: 30 # graus: més alt = menys arestes (només les més marcades)
+  tangentEdges: true # línies de tangència (entre cares que s'uneixen suaument)
+  tangentOpacity: 0.3 # 1 = tan marcades com les arestes · 0.15 = molt suaus
+draft: false
