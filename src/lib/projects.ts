@@ -28,8 +28,9 @@ export async function getProjects(lang: Lang): Promise<Project[]> {
 }
 
 export type Media =
-  | { type: 'image'; src: ImageMetadata; alt: string; caption?: string }
-  | { type: 'video'; src: string; poster?: ImageMetadata; alt: string; caption?: string };
+  | { type: 'image'; n: number; src: ImageMetadata; alt: string; caption?: string }
+  | { type: 'video'; n: number; src: string; poster?: ImageMetadata; alt: string; caption?: string };
+// n = número de l'element dins de `gallery` (comença per 1), el que es fa servir als marcadors [[n]] del text
 
 // Vídeos guardats dins la carpeta del projecte (p. ex. ./images/regata.mp4):
 // Vite els copia al build i en retorna la URL definitiva.
@@ -54,10 +55,10 @@ export function projectMedia(project: Project, lang: Lang): Media[] {
     const caption = captions[i];
     if ('video' in item) {
       const alt = caption ?? `${title} — ${t('project.video')} ${i + 1}`;
-      return { type: 'video', src: videoUrl(project.slug, item.video), poster: item.poster, alt, caption };
+      return { type: 'video', n: i + 1, src: videoUrl(project.slug, item.video), poster: item.poster, alt, caption };
     }
     const alt = caption ?? `${title} — ${t('project.image')} ${i + 1}`;
-    return { type: 'image', src: item, alt, caption };
+    return { type: 'image', n: i + 1, src: item, alt, caption };
   });
 }
 

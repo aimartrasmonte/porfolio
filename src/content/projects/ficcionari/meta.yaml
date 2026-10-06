@@ -1,0 +1,15 @@
+# Dades compartides pels tres idiomes. Els textos van a ca.md / es.md / en.md.
+order: 4
+year: 2026
+categories: [programacio]
+cover: ./images/portada.png
+galleryLayout: side # captures de mòbil = verticals
+gallery:
+  - ./images/portada.png
+  - ./images/lobby.png
+  - ./images/seleccio-paraula.png
+  - ./images/escriure definició.jpeg
+  - ./images/resultats-1.jpeg
+  - ./images/resultats-2.jpeg
+software: [React, TypeScript, Supabase, Tailwind CSS, Vite, Vercel]
+draft: false

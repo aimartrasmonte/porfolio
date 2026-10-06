@@ -5,8 +5,8 @@ import sitemap from "@astrojs/sitemap"
 // ─── Publicació ────────────────────────────────────────────────────────────
 // Quan tinguis usuari de GitHub, canvia SITE (i BASE si el repo NO es diu
 // "usuari.github.io"; per exemple, repo "porfolio" → BASE = '/porfolio').
-const SITE = "https://twococos.github.io"
-const BASE = "/"
+const SITE = "https://aimartrasmonte.github.io"
+const BASE = "/portfolio/"
 
 export default defineConfig({
   site: SITE,
@@ -21,6 +21,16 @@ export default defineConfig({
     }),
   ],
   vite: {
+    // Mòduls que es carreguen a demanda (en obrir el lightbox o el visor 3D). Sense això,
+    // en `npm run dev` Vite els descobreix tard i la primera càrrega falla ("Outdated Optimize Dep").
+    optimizeDeps: {
+      include: [
+        "photoswipe",
+        "photoswipe/lightbox",
+        "@google/model-viewer/dist/model-viewer-module.js",
+        "three",
+      ],
+    },
     build: {
       // El visor 3D (model-viewer + three.js, ~1 MB) es carrega a demanda; no cal avisar-ne.
       chunkSizeWarningLimit: 1100,

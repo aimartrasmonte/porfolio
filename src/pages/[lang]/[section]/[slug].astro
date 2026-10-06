@@ -10,6 +10,7 @@ import ModelViewer from '../../../components/ModelViewer.astro';
 import SpecSheet from '../../../components/SpecSheet.astro';
 import { LANGS, type Lang } from '../../../i18n/ui';
 import { categoryName, pathFor, SEGMENTS, useTranslations } from '../../../i18n/utils';
+import { splitContent } from '../../../lib/embeds';
 import { getProjects, projectMedia } from '../../../lib/projects';
 
 export async function getStaticPaths() {
@@ -39,7 +40,22 @@ const t = useTranslations(lang);
 const { Content } = await render(text);
 const num = (n: number) => String(n).padStart(2, '0');
 
-const galleryImages = projectMedia(project, lang);
+// Marcadors [[3]], [[3, 5]], [[3d]]... dins del .md: imatges i model intercalats amb el text.
+// El que no s'hi col·loca va a la galeria i al visor del final.
+const { segments, remaining: galleryImages, modelPlaced } = splitContent(
+  text.rendered?.html ?? '',
+  projectMedia(project, lang),
+  !!meta.model3d,
+  `src/content/projects/${text.id}.md`,
+);
+const hasMarkers = segments.some((s) => s.type !== 'html');
+const showModel = !!meta.model3d && !modelPlaced;
+// Lletres dels blocs del final (A, B, C...) segons els que es mostren
+const blockLabels = [galleryImages.length > 0 && 'gallery', showModel && 'model', !!meta.pdf && 'docs'].filter(Boolean);
+const letter = (name: string) => String.fromCharCode(65 + blockLabels.indexOf(name));
+// Portada vertical: al costat del títol i sencera, en lloc de retallada a tota amplada
+const sideCover =
+  meta.coverLayout === 'side' || (meta.coverLayout === 'auto' && meta.cover.height > meta.cover.width);
 ---
 
 <BaseLayout
@@ -51,36 +67,72 @@ const galleryImages = projectMedia(project, lang);
   type="article"
 >
   <article class="post">
-    <header class="container intro">
-      <a class="back label" href={pathFor(lang, { name: 'home', hash: 'projectes' })}>
-        <Icon name="arrow-left" />
-        {t('project.back')}
-      </a>
-      <p class="label meta-line">
-        <span class="num">{num(index + 1)} / {num(total)}</span>
-        <span>{meta.categories.map((c) => categoryName(c, lang)).join(' · ')}</span>
-        {meta.year && <span>{meta.year}</span>}
-      </p>
-      <h1>{text.data.title}</h1>
-      <p class="summary">{text.data.summary}</p>
+    <header class:list={['container intro', { 'intro--side': sideCover }]}>
+      <div class="intro-text">
+        <a class="back label" href={pathFor(lang, { name: 'home', hash: 'projectes' })}>
+          <Icon name="arrow-left" />
+          {t('project.back')}
+        </a>
+        <p class="label meta-line">
+          <span class="num">{num(index + 1)} / {num(total)}</span>
+          <span>{meta.categories.map((c) => categoryName(c, lang)).join(' · ')}</span>
+          {meta.year && <span>{meta.year}</span>}
+        </p>
+        <h1>{text.data.title}</h1>
+        <p class="summary">{text.data.summary}</p>
+      </div>
+      {
+        sideCover && (
+          <Picture
+            class="cover cover--side"
+            src={meta.cover}
+            alt={text.data.title}
+            formats={['avif', 'webp']}
+            widths={[420, 840, 1260]}
+            sizes="(max-width: 760px) 100vw, 420px"
+            loading="eager"
+            fetchpriority="high"
+          />
+        )
+      }
     </header>
 
-    <div class="container cover-wrap">
-      <Picture
-        class="cover"
-        src={meta.cover}
-        alt={text.data.title}
-        formats={['avif', 'webp']}
-        widths={[800, 1280, 1920, 2400]}
-        sizes="(max-width: 1240px) 100vw, 1240px"
-        loading="eager"
-        fetchpriority="high"
-      />
-    </div>
+    {
+      !sideCover && (
+        <div class="container cover-wrap">
+          <Picture
+            class="cover"
+            src={meta.cover}
+            alt={text.data.title}
+            formats={['avif', 'webp']}
+            widths={[800, 1280, 1920, 2400]}
+            sizes="(max-width: 1240px) 100vw, 1240px"
+            loading="eager"
+            fetchpriority="high"
+          />
+        </div>
+      )
+    }
 
     <div class="container columns">
       <div class="prose" lang={project.isFallback ? 'ca' : undefined}>
-        <Content />
+        {
+          hasMarkers ? (
+            segments.map((seg) =>
+              seg.type === 'html' ? (
+                <Fragment set:html={seg.html} />
+              ) : seg.type === 'media' ? (
+                <Gallery lang={lang} images={seg.items} variant="inline" />
+              ) : (
+                <div class="embed-model">
+                  <ModelViewer src={meta.model3d!} alt={text.data.title} lang={lang} modelStyle={meta.modelStyle} />
+                </div>
+              ),
+            )
+          ) : (
+            <Content />
+          )
+        }
       </div>
 
       <aside class="side">
@@ -100,7 +152,7 @@ const galleryImages = projectMedia(project, lang);
       galleryImages.length > 0 && (
         <section class="container block" aria-labelledby="gallery-title">
           <h2 id="gallery-title" class="section-title block-title">
-            <span class="label">A</span> {t('project.gallery')}
+            <span class="label">{letter('gallery')}</span> {t('project.gallery')}
           </h2>
           <Gallery lang={lang} images={galleryImages} variant="grid" />
         </section>
@@ -108,12 +160,12 @@ const galleryImages = projectMedia(project, lang);
     }
 
     {
-      meta.model3d && (
+      showModel && (
         <section class="container block" aria-labelledby="model-title">
           <h2 id="model-title" class="section-title block-title">
-            <span class="label">B</span> {t('project.model')}
+            <span class="label">{letter('model')}</span> {t('project.model')}
           </h2>
-          <ModelViewer src={meta.model3d} alt={text.data.title} poster={meta.cover} lang={lang} />
+          <ModelViewer src={meta.model3d!} alt={text.data.title} lang={lang} modelStyle={meta.modelStyle} />
         </section>
       )
     }
@@ -122,7 +174,7 @@ const galleryImages = projectMedia(project, lang);
       meta.pdf && (
         <section class="container block" aria-labelledby="docs-title">
           <h2 id="docs-title" class="section-title block-title">
-            <span class="label">C</span> {t('project.downloads')}
+            <span class="label">{letter('docs')}</span> {t('project.downloads')}
           </h2>
           <div class="doc-card">
             <Icon name="file" size={40} />
@@ -202,6 +254,34 @@ const galleryImages = projectMedia(project, lang);
     color: var(--ink-2);
   }
 
+  /* Portada vertical al costat del títol, sencera */
+  .intro--side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: end;
+  }
+  .intro--side :global(.cover--side) {
+    display: block;
+    width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    object-position: right bottom;
+    border-radius: var(--radius);
+  }
+  @media (max-width: 760px) {
+    .intro--side {
+      grid-template-columns: 1fr;
+    }
+    .intro--side :global(.cover--side) {
+      width: auto;
+      max-width: 100%;
+      max-height: 70vh;
+      margin-inline: auto;
+      object-position: center;
+    }
+  }
+
   .cover-wrap {
     margin-top: clamp(2rem, 5vw, 3rem);
   }
@@ -221,6 +301,9 @@ const galleryImages = projectMedia(project, lang);
   }
   .columns .prose > :global(:first-child) {
     margin-top: 0;
+  }
+  .embed-model {
+    margin-block: 2.2em;
   }
   .side {
     position: sticky;

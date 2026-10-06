@@ -3,6 +3,8 @@
 // - variant "grid": tots els elements en columnes (pàgina de projecte)
 // - variant "strip": tira de miniatures; mostra `visible` elements i un "+N"
 //   a l'últim, però el lightbox els inclou tots (home). Amb column, en vertical.
+// - variant "inline": dins del text del projecte; un sol element es veu sencer,
+//   uns quants van en fila
 import { getImage, Image } from 'astro:assets';
 import Icon from './Icon.astro';
 import type { Lang } from '../i18n/ui';
@@ -12,7 +14,7 @@ import type { Media } from '../lib/projects';
 interface Props {
   lang: Lang;
   images: Media[];
-  variant?: 'grid' | 'strip';
+  variant?: 'grid' | 'strip' | 'inline';
   visible?: number;
   column?: boolean;
 }
@@ -32,6 +34,7 @@ const items = await Promise.all(
   }),
 );
 const extra = Math.max(items.length - visible, 0);
+const single = variant === 'inline' && items.length === 1;
 const thumbWidths = variant === 'strip' ? [240, 480] : [480, 800, 1200];
 const thumbSizes =
   variant === 'strip'
@@ -39,7 +42,7 @@ const thumbSizes =
     : '(max-width: 600px) 100vw, (max-width: 1000px) 50vw, 400px';
 ---
 
-<div class:list={['gallery', `gallery--${variant}`, { 'gallery--column': column }, 'pswp-gallery']}>
+<div class:list={['gallery', `gallery--${variant}`, { 'gallery--column': column, 'gallery--single': single }, 'pswp-gallery']}>
   {
     items.map((item, i) => {
       const hidden = variant === 'strip' && i >= visible;
@@ -60,10 +63,14 @@ const thumbSizes =
             {item.type === 'image' && <Image src={item.src} alt={item.alt} widths={thumbWidths} sizes={thumbSizes} loading="lazy" />}
             {item.type === 'video' &&
               (item.poster ? (
-                <Image src={item.poster} alt={item.alt} widths={thumbWidths} sizes={thumbSizes} loading="lazy" />
+                <>
+                  <Image src={item.poster} alt={item.alt} widths={thumbWidths} sizes={thumbSizes} loading="lazy" />
+                  {/* Es reprodueix a sobre del pòster en passar-hi el ratolí */}
+                  <video class="thumb-video thumb-video--over" src={item.src} preload="none" muted loop playsinline aria-hidden="true" />
+                </>
               ) : (
                 // Sense pòster: el primer fotograma del vídeo fa de miniatura
-                <video src={`${item.src}#t=0.1`} preload="metadata" muted playsinline aria-hidden="true" />
+                <video class="thumb-video" src={`${item.src}#t=0.1`} preload="metadata" muted loop playsinline aria-hidden="true" />
               ))}
             {isVideo && !isLastVisible && (
               <span class="play" aria-hidden="true">
@@ -76,9 +83,9 @@ const thumbSizes =
               </span>
             )}
           </a>
-          {variant === 'grid' && item.caption && (
+          {variant !== 'strip' && item.caption && (
             <figcaption>
-              <span class="mono">{String(i + 1).padStart(2, '0')}</span> {item.caption}
+              <span class="mono">{String(item.n).padStart(2, '0')}</span> {item.caption}
             </figcaption>
           )}
         </figure>
@@ -157,6 +164,21 @@ const thumbSizes =
       togglePlay(box);
     });
 
+    // Miniatures de vídeo: es reprodueixen (sense so) mentre el ratolí hi és a sobre
+    if (matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches) {
+      gallery.querySelectorAll<HTMLElement>('a[data-video]').forEach((a) => {
+        const video = a.querySelector<HTMLVideoElement>('.thumb-video');
+        if (!video) return;
+        a.addEventListener('pointerenter', () => {
+          video.play().then(() => a.classList.add('is-playing'), () => {});
+        });
+        a.addEventListener('pointerleave', () => {
+          video.pause();
+          a.classList.remove('is-playing');
+        });
+      });
+    }
+
     // Peu de foto a la part inferior
     lightbox.on('uiRegister', () => {
       lightbox.pswp?.ui?.registerElement({
@@ -210,6 +232,22 @@ const thumbSizes =
     transform: scale(1.04);
   }
 
+  /* Vídeo que es reprodueix a sobre del pòster en fer hover */
+  .thumb-video--over {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    aspect-ratio: auto !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+  a.is-playing .thumb-video--over {
+    opacity: 1;
+  }
+  a.is-playing .play {
+    opacity: 0;
+  }
+
   /* Botó de "play" sobre les miniatures de vídeo */
   .play {
     position: absolute;
@@ -224,7 +262,9 @@ const thumbSizes =
     background: var(--orange);
     color: var(--orange-ink);
     box-shadow: 0 2px 10px rgb(0 0 0 / 0.3);
-    transition: scale 0.2s;
+    transition:
+      scale 0.2s,
+      opacity 0.2s;
   }
   .play :global(svg) {
     width: 1.1rem;
@@ -261,6 +301,27 @@ const thumbSizes =
   }
   figcaption .mono {
     color: var(--blue);
+  }
+
+  /* Dins del text (inline): en fila, retallades a 4:3; si n'hi ha una de sola, centrada
+     i de la mida d'una de les de fila de 3 (es pot ampliar al lightbox) */
+  .gallery--inline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 1rem;
+    margin-block: 2.2em;
+  }
+  .gallery--inline img,
+  .gallery--inline video {
+    margin: 0; /* anul·la el marge de .prose img */
+    aspect-ratio: 4 / 3;
+  }
+  .gallery--single {
+    grid-template-columns: minmax(min(100%, 200px), calc((100% - 2rem) / 3));
+    justify-content: center;
+  }
+  .gallery--single figcaption {
+    text-align: center;
   }
 
   /* Tira (home) */

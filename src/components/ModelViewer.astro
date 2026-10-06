@@ -1,29 +1,29 @@
 ---
 // Visor 3D interactiu (<model-viewer> de Google). La llibreria (~1 MB amb three.js)
 // només es descarrega quan el visor entra a la pantalla.
-import type { ImageMetadata } from 'astro';
-import { getImage } from 'astro:assets';
+// L'aspecte (transparència, color, arestes) es configura amb `modelStyle` a meta.yaml.
 import Icon from './Icon.astro';
 import type { Lang } from '../i18n/ui';
 import { useTranslations, withBase } from '../i18n/utils';
+import type { ModelStyle } from '../lib/model-style';
 
 interface Props {
   src: string; // camí dins de /public
   alt: string;
-  poster?: ImageMetadata;
   lang: Lang;
+  modelStyle?: ModelStyle;
 }
-const { src, alt, poster, lang } = Astro.props;
+const { src, alt, lang, modelStyle } = Astro.props;
 const t = useTranslations(lang);
-const posterUrl = poster ? (await getImage({ src: poster, width: 1200, format: 'webp' })).src : undefined;
 ---
 
 <div class="viewer blueprint-grid" data-model-viewer>
   <model-viewer
     src={withBase(src)}
     alt={alt}
-    poster={posterUrl}
+    data-style={modelStyle ? JSON.stringify(modelStyle) : undefined}
     camera-controls
+    min-field-of-view="4deg"
     auto-rotate
     auto-rotate-delay="1500"
     rotation-per-second="18deg"
@@ -35,15 +35,143 @@ const posterUrl = poster ? (await getImage({ src: poster, width: 1200, format: '
     reveal="auto"
     touch-action="pan-y"
   >
+    <div slot="progress-bar"></div>
   </model-viewer>
+  <div class="loading" role="status" aria-label={t('project.modelLoading')}><span class="spinner"></span></div>
   <p class="hint label"><Icon name="cube" /> {t('project.modelHint')}</p>
 </div>
 
 <script>
-  // Carrega el component només quan el visor és a prop de la pantalla
-  const viewers = document.querySelectorAll('[data-model-viewer]');
+  import type { ModelStyle } from '../lib/model-style';
+  import { tangentEdges } from '../lib/tangent-edges';
+
+  type RGBA = [number, number, number, number];
+  type MVMaterial = {
+    setAlphaMode(mode: 'OPAQUE' | 'MASK' | 'BLEND'): void;
+    pbrMetallicRoughness: {
+      baseColorFactor: RGBA;
+      setBaseColorFactor(c: RGBA | string): void;
+      baseColorTexture: { setTexture(t: null): void } | null;
+    };
+  };
+  type MVElement = HTMLElement & { model?: { materials: MVMaterial[] } };
+
+  // Transparència i color: API oficial de <model-viewer>
+  function applyMaterials(mv: MVElement, style: ModelStyle) {
+    for (const mat of mv.model?.materials ?? []) {
+      const pbr = mat.pbrMetallicRoughness;
+      if (style.color) {
+        pbr.baseColorTexture?.setTexture(null);
+        pbr.setBaseColorFactor(style.color);
+      }
+      if (style.opacity < 1) {
+        const [r, g, b, a] = pbr.baseColorFactor;
+        mat.setAlphaMode('BLEND');
+        pbr.setBaseColorFactor([r, g, b, a * style.opacity]);
+      }
+    }
+  }
+
+  // Arestes: <model-viewer> no ho permet, així que s'accedeix a la seva escena
+  // three.js interna (no és API pública: si una actualització la canvia, el model
+  // es continua veient però sense arestes).
+  async function addEdges(mv: MVElement, style: ModelStyle) {
+    const sceneKey = Object.getOwnPropertySymbols(mv).find((s) => s.description === 'scene');
+    const scene = sceneKey ? (mv as any)[sceneKey] : null;
+    const root = scene?.model;
+    if (!root) {
+      console.warn('[ModelViewer] No s\'ha pogut accedir a l\'escena per dibuixar les arestes');
+      return;
+    }
+    const { BufferGeometry, Float32BufferAttribute, EdgesGeometry, LineBasicMaterial, LineSegments } =
+      await import('three');
+    // Color segons el tema: blau en clar, taronja en fosc (o els de meta.yaml)
+    const edgeColor = () => {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      const custom = dark ? style.edgeColorDark : style.edgeColor;
+      const cssVar = getComputedStyle(document.documentElement).getPropertyValue(dark ? '--orange' : '--blue');
+      return custom || cssVar.trim() || (dark ? '#ff6233' : '#123778');
+    };
+    const lineMaterial = new LineBasicMaterial({ color: edgeColor() });
+    // Tangències: mateix color però més suau
+    const tangentMaterial = new LineBasicMaterial({
+      color: edgeColor(),
+      transparent: true,
+      opacity: style.tangentOpacity,
+      depthWrite: false,
+    });
+    // Canvia el color al moment quan es commuta el tema
+    new MutationObserver(() => {
+      const c = edgeColor();
+      lineMaterial.color.set(c);
+      tangentMaterial.color.set(c);
+      scene.queueRender();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    const meshes: any[] = [];
+    root.traverse((o: any) => {
+      if (o.isMesh && !o.isSkinnedMesh && !o.userData.hasEdges) meshes.push(o);
+    });
+    for (const mesh of meshes) {
+      const addLines = (geometry: any, material: any) => {
+        const lines = new LineSegments(geometry, material);
+        lines.raycast = () => {}; // que no interfereixi amb els clics del visor
+        mesh.add(lines);
+      };
+      if (style.edges) addLines(new EdgesGeometry(mesh.geometry, style.edgeAngle), lineMaterial);
+      if (style.tangentEdges) {
+        const p = mesh.geometry.attributes.position;
+        const positions = p.isInterleavedBufferAttribute
+          ? Float32Array.from({ length: p.count * 3 }, (_, i) => p.getComponent(Math.floor(i / 3), i % 3))
+          : p.array;
+        const segments = tangentEdges(positions, mesh.geometry.index?.array ?? null, style.edgeAngle);
+        if (segments?.length) {
+          const g = new BufferGeometry();
+          g.setAttribute('position', new Float32BufferAttribute(segments, 3));
+          addLines(g, tangentMaterial);
+        }
+        // Deixa respirar el navegador entre peça i peça (models grans)
+        await new Promise((r) => setTimeout(r));
+      }
+      mesh.userData.hasEdges = true;
+      // Empeny lleugerament les cares enrere perquè les línies no parpellegin
+      for (const m of [mesh.material].flat()) {
+        m.polygonOffset = true;
+        m.polygonOffsetFactor = 1;
+        m.polygonOffsetUnits = 1;
+        m.needsUpdate = true;
+      }
+    }
+    scene.queueRender();
+  }
+
+  function setup(mv: MVElement) {
+    const style: ModelStyle | null = mv.dataset.style ? JSON.parse(mv.dataset.style) : null;
+    // La roda de càrrega desapareix quan el model (i les arestes, si n'hi ha) està a punt
+    const done = () => mv.parentElement?.classList.add('is-loaded');
+    mv.addEventListener('load', async () => {
+      try {
+        if (style) {
+          applyMaterials(mv, style);
+          if (style.edges || style.tangentEdges) await addEdges(mv, style);
+        }
+      } finally {
+        done();
+      }
+    });
+    mv.addEventListener('error', done);
+  }
+
+  // Carrega el component només quan el visor és a prop de la pantalla.
+  // Es fa servir la versió "module", que comparteix el paquet `three` del projecte
+  // (així les arestes no obliguen a descarregar three.js dues vegades).
+  const viewers = document.querySelectorAll<HTMLElement>('[data-model-viewer]');
   if (viewers.length) {
-    const load = () => import('@google/model-viewer');
+    viewers.forEach((v) => {
+      const mv = v.querySelector<MVElement>('model-viewer');
+      if (mv) setup(mv);
+    });
+    const load = () => import('@google/model-viewer/dist/model-viewer-module.js');
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(
         (entries) => {
@@ -75,6 +203,40 @@ const posterUrl = poster ? (await getImage({ src: poster, width: 1200, format: '
     height: clamp(320px, 60vh, 620px);
     --poster-color: transparent;
     background: transparent;
+  }
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .is-loaded .loading {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.3s,
+      visibility 0s 0.3s;
+  }
+  .spinner {
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 2px solid var(--line);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  :global(:root[data-theme='dark']) .spinner {
+    border-top-color: var(--orange);
+  }
+  .is-loaded .spinner {
+    animation: none;
+  }
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
   }
   .hint {
     position: absolute;

@@ -3,9 +3,38 @@ order: 2
 year: 2024
 categories: [nautica, cad, simulacio, fabricacio]
 cover: ./images/cover.jpg
-galleryLayout: below # side = miniatures al costat (per a fotos verticals)
-# Afegeix aquí les fotos i vídeos (els suggeriments de cada secció són als comentaris de ca.md)
-gallery: []
-software: [MaxSurf Modeler, MaxSurf Stability, MaxSurf Resistance, SolidWorks, Bambu Studio]
+galleryLayout: side # side = miniatures al costat (per a fotos verticals)
+# Fotos i vídeos en l'ordre del procés (els peus de foto són a captions de ca/es/en.md)
+gallery:
+  - ./images/final_3d_amura_nobg.png
+  - ./images/final_3d_proa_quadernes.png
+  - ./images/Barco1.png
+  - ./images/centre popa picat.png
+  - ./images/foto-plastics.jpg
+  - ./images/fibra-1.jpg
+  - ./images/laminat-1.jpg
+  - ./images/laminat-2.jpg
+  - ./images/laminat-3.jpg
+  - video: ./images/colar-plom-retallat.mp4
+  - ./images/tupper.jpg
+  - ./images/servomotors.jpg
+  - ./images/cover.jpg
+  - ./images/foto-equip.jpg
+  - ./images/IMG-20240526-WA0172.jpg
+  - video: ./images/VID-20240526-WA0038.mp4
+  - video: ./images/VID-20240526-WA0041.mp4
+  - video: ./images/VID-20240526-WA0043.mp4
+software: [MaxSurf Suite, SolidWorks, Bambu Studio]
 pdf: projects/haddock/TFE_Trasmonte_Domenech_Aimar_GETI.pdf
+model3d: projects/haddock/haddock.glb
+# (opcional) aspecte del model 3D. Treu les línies que no vulguis.
+modelStyle:
+  opacity: 0.4 # 1 = opac · 0.3 = molt translúcid
+  # color: '#dfe6ee' # força un color a tot el model (treu les textures)
+  edges: true # dibuixa les arestes vives
+  # edgeColor: '#123778' # per defecte, el blau del web
+  # edgeColorDark: '#ff6233' # en mode fosc; per defecte, el taronja del web
+  edgeAngle: 30 # graus: més alt = menys arestes (només les més marcades)
+  tangentEdges: true # línies de tangència (entre cares que s'uneixen suaument)
+  tangentOpacity: 0.6 # 1 = tan marcades com les arestes · 0.15 = molt suaus
 draft: false

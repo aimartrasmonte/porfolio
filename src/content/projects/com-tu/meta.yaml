@@ -6,15 +6,32 @@ cover: ./images/com-tu-mar-2.jpg
 hero: ./images/com-tu-mar-1.jpg # (opcional) imatge gran de dalt de tot de la portada
 galleryLayout: side # miniatures al costat de la imatge gran (below = a sota)
 gallery:
-  - ./images/com-tu-mar-1.jpg
-  - ./images/com-tu-premis.jpg
-  - ./images/com-tu-equip.jpg
+  - ./images/casc-maxsurf.jpeg
+  - ./images/casc-impres.jpeg
+  - video: ./images/encaix-mecanic.mp4
+  - ./images/casc-muntat.jpg
+  - ./images/casc-muntat-2.jpg
+  - ./images/perfils-alumini.jpg
+  - ./images/base-muntada.jpg
+  - ./images/base-muntada-2.jpg
+  - video: ./images/video-prova-flotacio.mp4
+  - video: ./images/video-servos.mp4
   - video: ./images/video-navegant-1.mp4
   - video: ./images/video-navegant-2.mp4
-  - video: ./images/video-servos.mp4
+  - ./images/com-tu-equip.jpg
+  - ./images/com-tu-premis.jpg
 software: [SolidWorks] # p. ex. [SolidWorks, ANSYS] — pendent d'omplir
 # ⚠ La memòria i el model 3D són fitxers PROVISIONALS: substitueix-los pels reals
 # (la memòria del TFG i un .glb del veler) abans de publicar.
-pdf: projects/velers-rc/memoria.pdf
-model3d: projects/velers-rc/model.glb
+model3d: projects/com-tu/com-tu-2.glb
+# (opcional) aspecte del model 3D. Treu les línies que no vulguis.
+modelStyle:
+  opacity: 0.6 # 1 = opac · 0.3 = molt translúcid
+  # color: '#dfe6ee' # força un color a tot el model (treu les textures)
+  edges: true # dibuixa les arestes vives
+  # edgeColor: '#123778' # per defecte, el blau del web
+  # edgeColorDark: '#ff6233' # en mode fosc; per defecte, el taronja del web
+  edgeAngle: 30 # graus: més alt = menys arestes (només les més marcades)
+  tangentEdges: true # línies de tangència (entre cares que s'uneixen suaument)
+  tangentOpacity: 0.6 # 1 = tan marcades com les arestes · 0.15 = molt suaus
 draft: false

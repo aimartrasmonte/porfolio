@@ -26,6 +26,9 @@ const projectMeta = defineCollection({
         .default([]),
       // A la portada: miniatures de la galeria a sota de la imatge gran ("below")
       // o al costat ("side", millor per a fotos verticals)
+      // Pàgina del projecte: "wide" = portada a tota amplada sota el títol; "side" = al costat
+      // del títol, sencera (per a fotos verticals). "auto" tria "side" si la foto és vertical.
+      coverLayout: z.enum(['auto', 'wide', 'side']).default('auto'),
       galleryLayout: z.enum(['below', 'side']).default('below'),
       // Imatge del requadre gran de dalt de tot de la portada (FIG. 01). Es fa servir
       // la del primer projecte (per `order`) que la tingui; si cap en té, la `cover` del primer.
@@ -33,6 +36,20 @@ const projectMeta = defineCollection({
       software: z.array(z.string()).default([]),
       pdf: z.string().optional(), // camí dins de /public, p. ex. 'projects/velers-rc/memoria.pdf'
       model3d: z.string().optional(), // camí dins de /public, p. ex. 'projects/velers-rc/model.glb'
+      // Aspecte del model 3D (tot opcional). Exemple:
+      //   modelStyle: { opacity: 0.4, color: '#c8d4e0', edges: true }
+      modelStyle: z
+        .object({
+          opacity: z.number().min(0).max(1).default(1), // 1 = opac, 0 = invisible
+          color: z.string().optional(), // força un color a tots els materials ('#rrggbb')
+          edges: z.boolean().default(false), // dibuixa les arestes vives
+          edgeColor: z.string().optional(), // per defecte, el blau del web
+          edgeColorDark: z.string().optional(), // en mode fosc; per defecte, el taronja del web
+          edgeAngle: z.number().min(0).max(180).default(30), // graus: més alt = menys arestes
+          tangentEdges: z.boolean().default(false), // línies de tangència (vores entre cares suaus)
+          tangentOpacity: z.number().min(0).max(1).default(0.35), // com de suaus es veuen
+        })
+        .optional(),
       draft: z.boolean().default(false),
     }),
 });

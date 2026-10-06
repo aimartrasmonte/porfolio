@@ -1,23 +1,55 @@
 ---
-title: Competition RC sailboats
-summary: Design and construction of two radio-controlled sailboats using 3D printing and fibreglass-epoxy composites. Started as a Bachelor's thesis (graded with Honours) and finished runner-up at the RC Sailing Barcelona race in 2024 and 2025.
-context: Bachelor's thesis (Honours) and personal project
-role: Design and construction
-manufacturing: [3D printing, Fibreglass-epoxy lay-up]
-materials: [Fibreglass, Epoxy resin]
+title: "Com Tu: RC Sailing Barcelona 2025"
+summary: 1 m RC catamaran designed and built in just 80 days for under €300 for the 2025 edition. Focused on simplicity and robustness. Fully 3D printed in PETG with off-the-shelf parts. 2nd of 10 teams overall, in the speed trial and in the buoy race.
+context: RCSB 2025
+role: Team Leader
+duration: 3 months (February – May 2025)
+manufacturing: [FDM 3D printing, Threaded inserts and bolted joints, Toleranced fits]
+materials: [PETG, Standard aluminium parts]
+captions:
+  - "One of the hulls in MaxSurf, with its sections"
+  - "First hull segments printed in PETG"
+  - "Conical joint between two hull segments"
+  - "Complete hull: 4 segments fitted together, with the inserts for the cross beams"
+  - "Hull stern with the inserts and the rudder housing"
+  - "Standard aluminium tubes and profiles"
+  - "Assembled structure: hulls, tubes and rope cross-bracing"
+  - "Assembled structure: with aluminium-profile rudders and fins"
+  - "Flotation test"
+  - "Servo test"
+  - "Sailing tests"
+  - "Sailing tests"
+  - "The team at RC Sailing Barcelona 2025"
+  - "The three 2nd-place trophies: overall ranking, speed trial and fleet races"
 ---
 
-> **Draft.** This text only covers what's in the CV. Expand it with the design process, calculations, manufacturing and real photos.
+For the 2025 edition we entered again with a new team, together with one of the members of [Haddock's](../haddock/). Having designed a monohull the year before, this time we went for a catamaran, achieving a modular design with a **40% weight reduction** (5.25 kg to 3.1 kg), a **45% budget reduction** (€509 to €290), and quick repairs during the race.
 
-## Origin
+## Design concept
 
-The project started as my **Bachelor's thesis**: the design and construction of a competition RC sailboat, graded with **Honours**.
+A catamaran involves several trade-offs compared to a monohull. Catamarans are **faster and lighter**, with slender hulls and no keel bulb, but they **manoeuvre significantly worse**. On a small course with no long stretches to build up speed, that worked against us. To mitigate it, we designed **adjustable rudders** so we could increase manoeuvrability if testing showed it wasn't enough.
 
-## Design and manufacturing
+We didn't win the 2024 edition because our rudder broke just before the final race. To make sure that couldn't happen again, we went for a **modular design** in which any broken part could be swapped on the spot, bringing spares of every component on race day.
 
-The boats combine **3D printing** with composites (**fibreglass and epoxy**).
+[[3d]]
+
+## CAD and manufacturing
+
+As with Haddock, the design was done in **MaxSurf** for the surfaces, **SolidWorks** for the solids and **Bambu Studio and Cura** for slicing.
+
+The hulls are printed in 4 segments with **3% infill** that fit together with a **conical joint** inspired by woodworking. They aren't glued, so they can always be taken apart and reassembled. The joints don't need to be watertight, since each hull segment is sealed on its own. If part of a hull gets damaged, it can be swapped for a spare on the spot.
+
+[[1-5]]
+
+The hulls are joined by standard aluminium tubes and brackets bolted into inserts in the hulls, and the whole structure is stiffened with adjustable rope cross-bracing. The rudders and fins are made from standard aluminium profiles, which makes them very easy to swap and adjust in height. All the electronics sit in a watertight box in the centre, with a standard rope loop that the sheets are attached to.
+
+[[6-8]]
 
 ## Results
 
-- **Runner-up** at the RC Sailing Barcelona race, 2024 edition.
-- **Runner-up** at the RC Sailing Barcelona race, 2025 edition.
+- **2nd of 10 teams** both overall and in every event.
+- **€290** total cost, 40% under budget.
+
+[[9-14]]
+
+**Possible improvements:** we placed the mast too far forward, which put the centre of effort too far towards the bow and made the boat struggle to sail upwind. We had to fix it by fitting a smaller jib, which left the boat with less power than expected and offset the advantages of being a catamaran.
