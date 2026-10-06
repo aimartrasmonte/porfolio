@@ -4,7 +4,7 @@ import { getImage, Picture } from 'astro:assets';
 import Gallery from './Gallery.astro';
 import Icon from './Icon.astro';
 import type { Lang } from '../i18n/ui';
-import { categoryName, pathFor, useTranslations, withBase } from '../i18n/utils';
+import { categoryName, pathFor, useTranslations } from '../i18n/utils';
 import { projectMedia, type Project } from '../lib/projects';
 
 interface Props {
@@ -122,14 +122,6 @@ const slides = await Promise.all([
         {t('project.readMore')}
         <Icon name="arrow-right" />
       </a>
-      {
-        meta.pdf && (
-          <a class="btn btn--ghost" href={withBase(meta.pdf)} download>
-            <Icon name="file" />
-            {t('project.pdf')}
-          </a>
-        )
-      }
       {meta.model3d && <span class="badge mono" title={t('project.model')}><Icon name="cube" /> 3D</span>}
     </div>
   </div>
